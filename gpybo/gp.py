@@ -1,14 +1,15 @@
 import numpy as np
 from typing import NoReturn, Tuple
+from .kernel import Kernel
 
 
 class GP:
 
-    def __init__(self, kernel) -> None:
+    def __init__(self, kernel: Kernel) -> None:
 
         self.kernel = kernel
 
-    def log_likelihood(self):
+    def log_likelihood(self) -> NoReturn:
         raise NotImplementedError('GP::log_likelihood()')
 
     def train(self) -> NoReturn:
