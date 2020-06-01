@@ -1,4 +1,5 @@
-import numpy as np
+import torch
+from torch import Tensor
 
 from gpybo.kernel import SquaredExponentialKernel
 
@@ -8,48 +9,50 @@ class TestSquaredExponentialKernel:
     def test_calculate(self):
         kern = SquaredExponentialKernel()
 
-        x = np.arange(1, 4)
-        xp = np.arange(1, 4)
+        x = torch.arange(1, 4)
+        xp = torch.arange(1, 4)
 
-        target = np.array([[1.0, 0.60653066, 0.13533528],
-                           [0.60653066, 1.0, 0.60653066],
-                           [0.13533528, 0.60653066, 1.0]])
+        target = torch.tensor([[1.0, 0.60653066, 0.13533528],
+                               [0.60653066, 1.0, 0.60653066],
+                               [0.13533528, 0.60653066, 1.0]],
+                              dtype=torch.float32)
 
-        xp_mesh, x_mesh = np.meshgrid(xp, x)
-        ret_kern = kern.calculate(x_mesh, xp_mesh)
+        ret_kern = kern.calculate(*torch.meshgrid([x, xp]))
 
-        assert isinstance(ret_kern, np.ndarray)
-        assert np.allclose(ret_kern, target, atol=1e-3)
+        assert isinstance(ret_kern, Tensor)
+        assert torch.allclose(ret_kern, target, atol=1e-3)
 
     def test_calculate_kernel(self):
         kern = SquaredExponentialKernel()
 
-        x = np.arange(1, 4)
-        xp = np.arange(1, 4)
+        x = torch.arange(1, 4)
+        xp = torch.arange(1, 4)
 
-        target = np.array([[1.0, 0.60653066, 0.13533528],
-                           [0.60653066, 1.0, 0.60653066],
-                           [0.13533528, 0.60653066, 1.0]])
+        target = torch.tensor([[1.0, 0.60653066, 0.13533528],
+                               [0.60653066, 1.0, 0.60653066],
+                               [0.13533528, 0.60653066, 1.0]],
+                              dtype=torch.float32)
 
         ret_kern = kern.calculate_kernel(x, xp)
 
-        assert isinstance(ret_kern, np.ndarray)
-        assert np.allclose(ret_kern, target, atol=1e-3)
+        assert isinstance(ret_kern, Tensor)
+        assert torch.allclose(ret_kern, target, atol=1e-3)
 
     def test_covariance(self):
         kern = SquaredExponentialKernel()
 
-        x = np.arange(1, 5)
-        xp = np.arange(5, 7)
+        x = torch.arange(1, 5)
+        xp = torch.arange(5, 7)
 
-        target = np.array([[1.000, 0.607, 0.135, 0.011, 0.000, 0.000],
-                           [0.607, 1.000, 0.607, 0.135, 0.011, 0.000],
-                           [0.135, 0.607, 1.000, 0.607, 0.135, 0.011],
-                           [0.011, 0.135, 0.607, 1.000, 0.607, 0.135],
-                           [0.000, 0.011, 0.135, 0.607, 1.000, 0.607],
-                           [0.000, 0.000, 0.011, 0.135, 0.607, 1.000]])
+        target = torch.tensor([[1.000, 0.607, 0.135, 0.011, 0.000, 0.000],
+                               [0.607, 1.000, 0.607, 0.135, 0.011, 0.000],
+                               [0.135, 0.607, 1.000, 0.607, 0.135, 0.011],
+                               [0.011, 0.135, 0.607, 1.000, 0.607, 0.135],
+                               [0.000, 0.011, 0.135, 0.607, 1.000, 0.607],
+                               [0.000, 0.000, 0.011, 0.135, 0.607, 1.000]],
+                              dtype=torch.float32)
 
         ret_kern = kern.covariance(x, xp)
 
-        assert isinstance(ret_kern, np.ndarray)
-        assert np.allclose(ret_kern, target, atol=1e-3)
+        assert isinstance(ret_kern, Tensor)
+        assert torch.allclose(ret_kern, target, atol=1e-3)

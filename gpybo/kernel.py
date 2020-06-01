@@ -1,4 +1,5 @@
-import numpy as np
+import torch
+from torch import Tensor
 
 
 class Kernel:
@@ -6,10 +7,10 @@ class Kernel:
     def __init__(self) -> None:
         pass
 
-    def calculate(self, x: np.ndarray, xp: np.ndarray) -> np.ndarray:
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
         raise NotImplementedError('Kernel::calculate()')
 
-    def calculate_kernel(self, x: np.ndarray, xp: np.ndarray) -> np.ndarray:
+    def calculate_kernel(self, x: Tensor, xp: Tensor) -> Tensor:
 
         """Produces the Kernel given two sets of random variables.
 
@@ -21,46 +22,46 @@ class Kernel:
 
         Parameters
         ----------
-        x : np.ndarray
+        x : Tensor
             First set of random variables.
-        xp : np.ndarray
+        xp : Tensor
             Second set of random variables.
 
         Returns
         -------
-        np.ndarray
+        Tensor
             Calculated kernel.
         """
 
-        return self.calculate(*np.meshgrid(xp, x))
+        return self.calculate(*torch.meshgrid([x, xp]))
 
-    def covariance(self, x: np.ndarray, xp: np.ndarray) -> np.ndarray:
+    def covariance(self, x: Tensor, xp: Tensor) -> Tensor:
 
         """Calculates the Covariance Matrix.
 
         Parameters
         ----------
-        x : np.ndarray
+        x : Tensor
             First set of random variables.
-        xp : np.ndarray
+        xp : Tensor
             Second set of random variables.
 
         Returns
         -------
-        covariance : np.ndarray
+        covariance : Tensor
             Calculated covariance matrix.
         """
 
         if not x.ndim == xp.ndim == 1:
             raise AssertionError('x and xp must be one-dimensional.')
 
-        n = x.size + xp.size
-        covariance = np.zeros((n, n))
+        n = x.numel() + xp.numel()
+        covariance = torch.zeros((n, n))
 
-        covariance[0:x.size, 0:x.size] = self.calculate_kernel(x, x)
-        covariance[0:x.size, x.size:] = self.calculate_kernel(x, xp)
-        covariance[x.size:, :x.size] = self.calculate_kernel(xp, x)
-        covariance[x.size:, x.size:] = self.calculate_kernel(xp, xp)
+        covariance[:x.numel(), :x.numel()] = self.calculate_kernel(x, x)
+        covariance[:x.numel(), x.numel():] = self.calculate_kernel(x, xp)
+        covariance[x.numel():, :x.numel()] = self.calculate_kernel(xp, x)
+        covariance[x.numel():, x.numel():] = self.calculate_kernel(xp, xp)
 
         return covariance
 
@@ -74,7 +75,7 @@ class SquaredExponentialKernel(Kernel):
         self.l = 1.0
         self.sigma = 1.0
 
-    def calculate(self, x: np.ndarray, xp: np.ndarray) -> np.ndarray:
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
 
         """Squared Exponential Kernel Calculation.
 
@@ -84,14 +85,14 @@ class SquaredExponentialKernel(Kernel):
 
         Parameters
         ----------
-        x : np.ndarray
+        x : Tensor
             First set of random variables.
-        xp : np.ndarray
+        xp : Tensor
             Second set of random variables.
 
         Returns
         -------
-        np.ndarray
+        Tensor
             Calculated kernel.
         """
 
@@ -101,4 +102,4 @@ class SquaredExponentialKernel(Kernel):
             msg += f'xp with shape {xp.shape}'
             raise AssertionError(msg)
 
-        return self.l ** 2 * np.exp(-0.5 * np.square((x - xp) / self.sigma))
+        return self.l ** 2 * torch.exp(-0.5 * torch.pow((x - xp) / self.sigma, 2))

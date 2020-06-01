@@ -1,5 +1,6 @@
-import numpy as np
 import pytest
+import torch
+from torch import Tensor
 
 from gpybo.gp import GP
 from gpybo.kernel import SquaredExponentialKernel
@@ -17,26 +18,26 @@ class TestGP:
 
     def test_predictive_posterior(self, gp):
 
-        x = np.array([-4, -3, -2, -1, 1])
-        y = np.sin(x)
+        x = torch.tensor([-4, -3, -2, -1, 1], dtype=torch.float32)
+        y = torch.sin(x)
 
-        xp = np.arange(-5, 5, 0.5)
+        xp = torch.arange(-5, 5, 0.5)
 
         gp = gp | (x, y)
         mu_s, cov_s = gp.predictive_posterior(xp)
 
-        assert mu_s.shape == (20,)
+        assert mu_s.shape == (20, 1)
         assert cov_s.shape == (20, 20)
 
-        assert isinstance(mu_s, np.ndarray)
-        assert isinstance(cov_s, np.ndarray)
+        assert isinstance(mu_s, Tensor)
+        assert isinstance(cov_s, Tensor)
 
     def test_observe(self, gp):
 
-        x = np.array([-4, -3, -2, -1, 1])
-        y = np.sin(x)
+        x = torch.tensor([-4, -3, -2, -1, 1], dtype=torch.float32)
+        y = torch.sin(x)
 
         gp.observe(x, y)
 
-        assert np.array_equal(gp.x, x)
-        assert np.array_equal(gp.y, y)
+        assert torch.allclose(gp.x, x.view_as(gp.x))
+        assert torch.allclose(gp.y, y.view_as(gp.y))
