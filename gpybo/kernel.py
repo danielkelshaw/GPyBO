@@ -68,7 +68,11 @@ class Kernel:
 class SquaredExponentialKernel(Kernel):
 
     def __init__(self) -> None:
+
         super().__init__()
+
+        self.l = 1.0
+        self.sigma = 1.0
 
     def calculate(self, x: np.ndarray, xp: np.ndarray) -> np.ndarray:
 
@@ -97,4 +101,4 @@ class SquaredExponentialKernel(Kernel):
             msg += f'xp with shape {xp.shape}'
             raise AssertionError(msg)
 
-        return np.exp(-0.5 * np.square(np.abs(x - xp)))
+        return self.l ** 2 * np.exp(-0.5 * np.square((x - xp) / self.sigma))
