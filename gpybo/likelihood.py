@@ -1,4 +1,7 @@
 import numpy as np
+import torch
+from torch import Tensor
+
 from .kernel import Kernel
 
 
@@ -16,14 +19,18 @@ class GaussianLikelihood(Likelihood):
     def __init__(self) -> None:
         super().__init__()
 
-    def log_likelihood(self, kernel: Kernel, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def log_likelihood(self, kernel: Kernel, x: Tensor, y: Tensor) -> Tensor:
 
         K = kernel.calculate_kernel(x, x)
-        L = np.linalg.cholesky(K)
+        L = torch.cholesky(K)
 
-        alpha = np.linalg.lstsq(L.T, np.linalg.lstsq(L, y, rcond=None)[0], rcond=None)[0]
-        const_term = 0.5 * len(x) * np.log(2 * np.pi)
+        a0, _ = torch.lstsq(y, L)
+        alpha, _ = torch.lstsq(a0, L.T)
 
-        ll = -0.5 * y.T * alpha - np.sum(np.log(L.diagonal())) - const_term
+        y_alpha = -0.5 * y * alpha.view_as(y)
+        trace_log = torch.trace(torch.log(L))
+        const = 0.5 * len(x) * np.log(2 * np.pi)
+
+        ll = y_alpha - trace_log - const
 
         return ll
