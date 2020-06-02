@@ -1,11 +1,12 @@
 import torch
+import torch.nn as nn
 from torch import Tensor
 
 
-class Kernel:
+class Kernel(nn.Module):
 
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
         raise NotImplementedError('Kernel::calculate()')
@@ -72,8 +73,8 @@ class SquaredExponentialKernel(Kernel):
 
         super().__init__()
 
-        self.l = 1.0
-        self.sigma = 1.0
+        self.l = nn.Parameter(torch.tensor(1.0))
+        self.sigma = nn.Parameter(torch.tensor(1.0))
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
 
