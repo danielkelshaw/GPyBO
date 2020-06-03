@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+from .utils.lab import pw_dist
+
 
 class Kernel(nn.Module):
 
@@ -9,17 +11,11 @@ class Kernel(nn.Module):
         super().__init__()
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
-        raise NotImplementedError('Kernel::calculate()')
-
-    def calculate_kernel(self, x: Tensor, xp: Tensor) -> Tensor:
 
         """Produces the Kernel given two sets of random variables.
 
         The calculation of the kernel depends on the kernel method being
-        used - this is defined within the `self.calculate()` method. In
-        order to calculate the kernel as efficiently as possible the RVs
-        are converted to a pair of meshed grids - this ensures that the
-        kernel calculation remains simple.
+        used - this is defined within the defined super class.
 
         Parameters
         ----------
@@ -34,7 +30,7 @@ class Kernel(nn.Module):
             Calculated kernel.
         """
 
-        return self.calculate(*torch.meshgrid([x, xp]))
+        raise NotImplementedError('Kernel::calculate()')
 
     def covariance(self, x: Tensor, xp: Tensor) -> Tensor:
 
@@ -59,10 +55,10 @@ class Kernel(nn.Module):
         n = x.numel() + xp.numel()
         covariance = torch.zeros((n, n))
 
-        covariance[:x.numel(), :x.numel()] = self.calculate_kernel(x, x)
-        covariance[:x.numel(), x.numel():] = self.calculate_kernel(x, xp)
-        covariance[x.numel():, :x.numel()] = self.calculate_kernel(xp, x)
-        covariance[x.numel():, x.numel():] = self.calculate_kernel(xp, xp)
+        covariance[:x.numel(), :x.numel()] = self.calculate(x, x)
+        covariance[:x.numel(), x.numel():] = self.calculate(x, xp)
+        covariance[x.numel():, :x.numel()] = self.calculate(xp, x)
+        covariance[x.numel():, x.numel():] = self.calculate(xp, xp)
 
         return covariance
 
@@ -80,10 +76,6 @@ class SquaredExponentialKernel(Kernel):
 
         """Squared Exponential Kernel Calculation.
 
-        Function expects the two inputs: x, xp to have the same shape.
-        This ensures that matrix operations can be carried out without
-        any issues.
-
         Parameters
         ----------
         x : Tensor
@@ -97,10 +89,5 @@ class SquaredExponentialKernel(Kernel):
             Calculated kernel.
         """
 
-        if not x.shape == xp.shape:
-            msg = f'x and xp must have the same shape - received: '
-            msg += f'x with shape {x.shape} and '
-            msg += f'xp with shape {xp.shape}'
-            raise AssertionError(msg)
-
-        return self.l ** 2 * torch.exp(-0.5 * torch.pow((x - xp) / self.sigma, 2))
+        dst = pw_dist(x, xp)
+        return self.l ** 2 * torch.exp(-0.5 * torch.pow(dst / self.sigma, 2))
