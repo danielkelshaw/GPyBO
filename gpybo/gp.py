@@ -6,6 +6,7 @@ from torch import Tensor
 from .kernel import Kernel
 from .likelihood import GaussianLikelihood
 from .utils.early_stopping import EarlyStopping
+from .utils.uprank import uprank
 
 
 class GP:
@@ -20,20 +21,21 @@ class GP:
 
         self.optimiser = torch.optim.Adam(self.kernel.parameters())
 
-    def log_likelihood(self, stable) -> Tensor:
+    def log_likelihood(self, stable: bool = True) -> Tensor:
         ll = self.likelihood.log_likelihood(self.kernel, self.x, self.y, stable)
         return ll
 
     def train(self) -> NoReturn:
         raise NotImplementedError('GP::train()')
 
-    def optimise(self, max_iterations: int = 2000, patience: int = 15) -> None:
+    def optimise(self, max_iter: int = 1000, patience: int = 15, ret_loss: bool = False) -> None:
 
         if self.x is None or self.y is None:
             raise ValueError('Must set (x, y) values first.')
 
+        loss = None
         es = EarlyStopping(patience=patience)
-        for i in range(max_iterations):
+        for i in range(max_iter):
 
             self.optimiser.zero_grad()
 
@@ -45,16 +47,21 @@ class GP:
             if es(loss):
                 break
 
+        if ret_loss:
+            return loss
+
+    @uprank
     def observe(self, x: Tensor, y: Tensor) -> None:
         self.x = x
-        self.y = y.unsqueeze(1)
+        self.y = y
 
+    @uprank
     def predictive_posterior(self, xp: Tensor) -> Tuple[Tensor, Tensor]:
 
-        k_xx = self.kernel.calculate_kernel(self.x, self.x)
-        k_xxp = self.kernel.calculate_kernel(self.x, xp)
-        k_xpx = self.kernel.calculate_kernel(xp, self.x)
-        k_xpxp = self.kernel.calculate_kernel(xp, xp)
+        k_xx = self.kernel.calculate(self.x, self.x)
+        k_xxp = self.kernel.calculate(self.x, xp)
+        k_xpx = self.kernel.calculate(xp, self.x)
+        k_xpxp = self.kernel.calculate(xp, xp)
 
         k_xx_inv = torch.inverse(k_xx)
 
