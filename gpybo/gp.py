@@ -52,8 +52,13 @@ class GP:
 
     @uprank
     def observe(self, x: Tensor, y: Tensor) -> None:
-        self.x = x
-        self.y = y
+
+        if self.x is None and self.y is None:
+            self.x = x
+            self.y = y
+        else:
+            self.x = torch.cat([self.x, x], dim=0)
+            self.y = torch.cat([self.y, y], dim=0)
 
     @uprank
     def predictive_posterior(self, xp: Tensor) -> Tuple[Tensor, Tensor]:
