@@ -12,7 +12,7 @@ def uprank(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
             return x
 
         while len(x.shape) < 2:
-            x.unsqueeze_(dim=len(x.shape))
+            x = x.unsqueeze(dim=len(x.shape))
         return x
 
     @functools.wraps(fn)
