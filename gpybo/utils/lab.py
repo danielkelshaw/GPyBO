@@ -1,10 +1,10 @@
 import torch
 from torch import Tensor
 
-from .uprank import uprank
+from .shaping import uprank_two
 
 
-@uprank
+@uprank_two
 def pw_dist2(x: Tensor, xp: Tensor) -> Tensor:
 
     norm_x = torch.sum(x ** 2, dim=1)[:, None]
@@ -15,7 +15,7 @@ def pw_dist2(x: Tensor, xp: Tensor) -> Tensor:
     return sq_dst
 
 
-@uprank
+@uprank_two
 def pw_dist(x: Tensor, xp: Tensor) -> Tensor:
 
     sq_dst = pw_dist2(x, xp)
