@@ -1,4 +1,5 @@
-from typing import Any, NoReturn, Sequence, Tuple
+import copy
+from typing import Any, NoReturn, Optional, Sequence, Tuple
 
 import torch
 from torch import Tensor
@@ -21,14 +22,14 @@ class GP:
 
         self.optimiser = torch.optim.Adam(self.kernel.parameters())
 
+    def __call__(self, xp: Tensor) -> Tuple[Tensor, Tensor]:
+        return self.predictive_posterior(xp)
+
     def log_likelihood(self, stable: bool = True) -> Tensor:
         ll = self.likelihood.log_likelihood(self.kernel, self.x, self.y, stable)
         return ll
 
-    def train(self) -> NoReturn:
-        raise NotImplementedError('GP::train()')
-
-    def optimise(self, max_iter: int = 1000, patience: int = 15, ret_loss: bool = False) -> None:
+    def optimise(self, max_iter: int = 1000, patience: int = 15, ret_loss: bool = False) -> Optional[Tensor]:
 
         if self.x is None or self.y is None:
             raise ValueError('Must set (x, y) values first.')
@@ -49,6 +50,28 @@ class GP:
 
         if ret_loss:
             return loss
+
+    def train(self, n_restarts: int = 10) -> None:
+
+        best_loss = None
+        best_params = {}
+
+        for i in range(n_restarts):
+
+            for param in self.kernel.parameters():
+                torch.nn.init.uniform_(param, 0.0, 1.0)
+
+            loss = self.optimise(ret_loss=True)
+
+            if best_loss is None:
+                best_loss = loss
+            elif loss < best_loss:
+                best_loss = loss
+                p_dict = {k: v for k, v in self.kernel.named_parameters()}
+                best_params = copy.deepcopy(p_dict)
+
+        for name, param in self.kernel.named_parameters():
+            param.data = best_params[name]
 
     @uprank
     def observe(self, x: Tensor, y: Tensor) -> None:
