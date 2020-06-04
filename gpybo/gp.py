@@ -84,6 +84,9 @@ class GP:
             self.x = torch.cat([self.x, x], dim=0)
             self.y = torch.cat([self.y, y], dim=0)
 
+        if not self.y.shape[1] == 1:
+            raise ValueError('y must be a column vector')
+
     @to_tensor
     @uprank_two
     def predictive_posterior(self, xp: Any) -> Tuple[Tensor, Tensor]:
