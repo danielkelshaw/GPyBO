@@ -1,5 +1,5 @@
 import copy
-from typing import Any, NoReturn, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple
 
 import torch
 from torch import Tensor
@@ -7,7 +7,7 @@ from torch import Tensor
 from .kernel import Kernel
 from .likelihood import GaussianLikelihood
 from .utils.early_stopping import EarlyStopping
-from .utils.uprank import uprank
+from .utils.shaping import to_tensor, uprank_two
 
 
 class GP:
@@ -73,8 +73,9 @@ class GP:
         for name, param in self.kernel.named_parameters():
             param.data = best_params[name]
 
-    @uprank
-    def observe(self, x: Tensor, y: Tensor) -> None:
+    @to_tensor
+    @uprank_two
+    def observe(self, x: Any, y: Any) -> None:
 
         if self.x is None and self.y is None:
             self.x = x
@@ -83,8 +84,9 @@ class GP:
             self.x = torch.cat([self.x, x], dim=0)
             self.y = torch.cat([self.y, y], dim=0)
 
-    @uprank
-    def predictive_posterior(self, xp: Tensor) -> Tuple[Tensor, Tensor]:
+    @to_tensor
+    @uprank_two
+    def predictive_posterior(self, xp: Any) -> Tuple[Tensor, Tensor]:
 
         k_xx = self.kernel.calculate(self.x, self.x)
         k_xxp = self.kernel.calculate(self.x, xp)
