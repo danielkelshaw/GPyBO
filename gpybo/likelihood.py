@@ -19,7 +19,7 @@ class GaussianLikelihood(Likelihood):
     def __init__(self) -> None:
         super().__init__()
 
-    def log_likelihood(self, kernel: Kernel, x: Tensor, y: Tensor, stable: bool = True) -> Tensor:
+    def log_likelihood(self, kernel: Kernel, x: Tensor, y: Tensor, noise: Tensor, stable: bool = True) -> Tensor:
 
         """Calculates the Log Likelihood for the Gaussian Prior.
 
@@ -31,6 +31,8 @@ class GaussianLikelihood(Likelihood):
             Input values.
         y : Tensor
             Corresponding output values.
+        noise : Tensor
+            Noise in the GP.
         stable : bool
             True if stable calculation, False otherwise.
 
@@ -40,7 +42,7 @@ class GaussianLikelihood(Likelihood):
             Log Likelihood of outputs given the data.
         """
 
-        K = kernel.calculate(x, x)
+        K = kernel.calculate(x, x) + noise * torch.eye(x.shape[0])
 
         if stable:
             L = torch.cholesky(K)
