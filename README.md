@@ -10,16 +10,16 @@ Gaussian Processes | Bayesian Optimisation
 ### **Gaussian Process Regression in 10 Lines:**
 
 ```python
-import torch
+import numpy as np
 from gpybo import GP, SquaredExponentialKernel
 
-x = torch.tensor([-4, -3, -2, -1, 1], dtype=torch.float32)
-y = torch.sin(x)
+x = np.array([-4, -3, -2, -1, 1])
+y = np.sin(x)
 
 gp = GP(SquaredExponentialKernel()) | (x, y)
 gp.train(n_restarts=10)
 
-mu, cov = gp(torch.linspace(-5, 5, 100))
+mu, cov = gp(np.linspace(-5, 5, 100))
 ```
 
 ###### Made by Daniel Kelshaw
