@@ -26,6 +26,8 @@ class GP(nn.Module):
         self.noise = self._set_noise(train_noise)
         self.optimiser = torch.optim.Adam(self.kernel.parameters())
 
+    @to_tensor
+    @uprank_two
     def __call__(self, xp: Tensor) -> Tuple[Tensor, Tensor]:
         return self.predictive_posterior(xp)
 
