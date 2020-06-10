@@ -72,7 +72,7 @@ class GP(nn.Module):
     def train(self, n_restarts: int = 10) -> None:
 
         best_loss = None
-        best_params = {}
+        best_params = copy.deepcopy({k: v for k, v in self.named_parameters()})
 
         for i in range(n_restarts):
 
