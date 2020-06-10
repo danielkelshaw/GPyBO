@@ -7,7 +7,7 @@ Gaussian Processes | Bayesian Optimisation
 - [x] MIT License
 - [x] Python 3.6+
 
-### **Gaussian Process Regression in 10 Lines:**
+### **Gaussian Process Regression in 7 Lines:**
 
 ```python
 import numpy as np
@@ -21,5 +21,7 @@ gp.train(n_restarts=10)
 
 mu, cov = gp(np.linspace(-5, 5, 100))
 ```
+
+![GP Example](./media/gp_example.png)
 
 ###### Made by Daniel Kelshaw
