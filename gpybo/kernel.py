@@ -10,6 +10,9 @@ class Kernel(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
+    def __call__(self, x: Tensor, xp: Tensor) -> Tensor:
+        return self.calculate(x, xp)
+
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
 
         """Produces the Kernel given two sets of random variables.
