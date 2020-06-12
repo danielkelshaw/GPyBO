@@ -103,18 +103,20 @@ class GP(nn.Module):
         optimiser = self.optimiser(self.parameters())
         for i in range(max_iter):
 
+            optimiser.zero_grad()
             loss = -self.log_likelihood(stable=False)
+            loss.backward()
 
-            def closure():
-                optimiser.zero_grad()
-                loss.backward()
-                return loss
+            # def closure():
+            #     optimiser.zero_grad()
+            #     loss.backward()
+            #     return loss
 
-            optimiser.step(closure)
+            optimiser.step()
 
         return loss
 
-    def train(self, n_restarts: int = 10) -> Tensor:
+    def train(self, n_restarts: int = 10, n_iterations: int = 2000) -> Tensor:
 
         """Train the GP Model.
 
@@ -122,6 +124,8 @@ class GP(nn.Module):
         ----------
         n_restarts : int
             Number of times to restart the optimisation process.
+        n_iterations : int
+            Number of iterations to optimise for.
 
         Returns
         -------
@@ -137,7 +141,7 @@ class GP(nn.Module):
             for param in self.parameters():
                 torch.nn.init.uniform_(param, 0.0, 1.0)
 
-            loss = self.optimise()
+            loss = self.optimise(max_iter=n_iterations)
 
             if best_loss is None or loss < best_loss:
                 best_loss = loss
