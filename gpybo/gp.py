@@ -103,9 +103,7 @@ class GP(nn.Module):
         optimiser = self.optimiser(self.parameters())
         for i in range(max_iter):
 
-            # optimiser.zero_grad()
             loss = -self.log_likelihood(stable=False)
-            # loss.backward()
 
             def closure():
                 optimiser.zero_grad()
