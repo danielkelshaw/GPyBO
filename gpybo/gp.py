@@ -1,5 +1,5 @@
-import copy
-from typing import Any, Optional, Sequence, Tuple
+from copy import deepcopy
+from typing import Any, Sequence, Tuple
 
 import torch
 import torch.nn as nn
@@ -7,13 +7,22 @@ from torch import Tensor
 
 from .kernel import Kernel
 from .likelihood import GaussianLikelihood
-from .utils.early_stopping import EarlyStopping
 from .utils.shaping import to_tensor, uprank_two
 
 
 class GP(nn.Module):
 
     def __init__(self, kernel: Kernel, train_noise: bool = False) -> None:
+
+        """Gaussian Process Class.
+
+        Parameters
+        ----------
+        kernel : Kernel
+            Positive-Definite Kernel for calculations.
+        train_noise : bool
+            True if training with noise, False otherwise.
+        """
 
         super().__init__()
 
@@ -24,7 +33,7 @@ class GP(nn.Module):
         self.y = None
 
         self.noise = self._set_noise(train_noise)
-        self.optimiser = torch.optim.Adam(self.kernel.parameters())
+        self.optimiser = torch.optim.Adam
 
     @to_tensor
     @uprank_two
@@ -32,68 +41,126 @@ class GP(nn.Module):
         return self.predictive_posterior(xp)
 
     @staticmethod
-    def _set_noise(noise: bool):
+    def _set_noise(noise: bool) -> Tensor:
+
+        """Sets Noise to either Zero / a Parameter.
+
+        Parameters
+        ----------
+        noise : bool
+            True if noise is to be a parameter, False otherwise.
+
+        Returns
+        -------
+        Tensor
+            Parameter if noise is required, Zero otherwise.
+        """
+
         if noise:
             return nn.Parameter(torch.tensor(1.0, dtype=torch.float32))
         else:
             return torch.tensor(0.0, dtype=torch.float32)
 
     def log_likelihood(self, stable: bool = True) -> Tensor:
+
+        """Calculates the Log Likelihood of the Observations.
+
+        Parameters
+        ----------
+        stable : bool
+            True if using autograd, False otherwise.
+
+        Returns
+        -------
+        ll : Tensor
+            Log Likelihood of the observed events.
+        """
+
         ll = self.likelihood.log_likelihood(
             self.kernel, self.x, self.y, self.noise, stable
         )
         return ll
 
-    def optimise(self,
-                 max_iter: int = 1000,
-                 patience: int = 15,
-                 ret_loss: bool = False) -> Optional[Tensor]:
+    def optimise(self, max_iter: int = 1000) -> Tensor:
+
+        """Optimise GP Parameters.
+
+        Parameters
+        ----------
+        max_iter : int
+            Number of iterations to run.
+
+        Returns
+        -------
+        loss : Tensor
+            Calculated NLL.
+        """
 
         if self.x is None or self.y is None:
             raise ValueError('Must set (x, y) values first.')
 
         loss = None
-        es = EarlyStopping(patience=patience)
+        optimiser = self.optimiser(self.parameters())
         for i in range(max_iter):
-
-            self.optimiser.zero_grad()
 
             loss = -self.log_likelihood(stable=False)
 
-            loss.backward()
-            self.optimiser.step()
+            def closure():
+                optimiser.zero_grad()
+                loss.backward()
+                return loss
 
-            if es(loss):
-                break
+            optimiser.step(closure)
 
-        if ret_loss:
-            return loss
+        return loss
 
-    def train(self, n_restarts: int = 10) -> None:
+    def train(self, n_restarts: int = 10) -> Tensor:
+
+        """Train the GP Model.
+
+        Parameters
+        ----------
+        n_restarts : int
+            Number of times to restart the optimisation process.
+
+        Returns
+        -------
+        loss : Tensor
+            Calculated NLL of the best optimisation attempt.
+        """
 
         best_loss = None
-        best_params = copy.deepcopy({k: v for k, v in self.named_parameters()})
+        best_params = deepcopy({k: v for k, v in self.named_parameters()})
 
         for i in range(n_restarts):
 
             for param in self.parameters():
                 torch.nn.init.uniform_(param, 0.0, 1.0)
 
-            loss = self.optimise(ret_loss=True)
+            loss = self.optimise()
 
-            if best_loss is None:
+            if best_loss is None or loss < best_loss:
                 best_loss = loss
-            elif loss < best_loss:
-                best_loss = loss
-                p_dict = {k: v for k, v in self.named_parameters()}
-                best_params = copy.deepcopy(p_dict)
+                best_params = deepcopy({k: v for k, v in self.named_parameters()})
 
         for name, param in self.named_parameters():
             param.data = best_params[name]
 
+        return best_loss
+
     @to_tensor
     @uprank_two
     def observe(self, x: Any, y: Any) -> None:
+
+        """Adds additional observations.
+
+        Parameters
+        ----------
+        x : Tensor
+            Observation features.
+        y : Tensor
+            Observations.
+        """
 
         if self.x is None and self.y is None:
             self.x = x
@@ -108,6 +175,21 @@ class GP(nn.Module):
     @to_tensor
     @uprank_two
     def predictive_posterior(self, xp: Any) -> Tuple[Tensor, Tensor]:
+
+        """Predicts the Posterior.
+
+        Parameters
+        ----------
+        xp : Tensor
+            Features at which to predict the posterior.
+
+        Returns
+        -------
+        p_mean : Tensor
+            Mean of the predictive posterior.
+        p_cov : Tensor
+            Covariance of the predictive posterior.
+        """
 
         k_xx = self.kernel.calculate(self.x, self.x)
         k_xxp = self.kernel.calculate(self.x, xp)
