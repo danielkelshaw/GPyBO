@@ -94,3 +94,54 @@ class SquaredExponentialKernel(Kernel):
 
         dst = pw_dist(x, xp)
         return self.l ** 2 * torch.exp(-0.5 * torch.pow(dst / self.sigma, 2))
+
+
+class OneKernel(Kernel):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+        return torch.ones(x.numel(), xp.numel(), dtype=torch.float32)
+
+
+class ZeroKernel(Kernel):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+        return torch.zeros(x, xp, dtype=torch.float32)
+
+
+class SincKernel(Kernel):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+        dst = pw_dist(x, xp)
+        return torch.sin(dst) / dst
+
+
+class Matern32Kernel(Kernel):
+
+    def __init__(self):
+        super().__init__()
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+        dst = pw_dist(x, xp)
+        return (1 + dst) * torch.exp(-dst)
+
+
+class Matern52Kernel(Kernel):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+        dst = pw_dist(x, xp)
+        r1 = 5 ** 0.5 * dst
+        r2 = 5 * dst ** 2 / 3
+
+        return (1 + r1 + r2) * torch.exp(-r1)
