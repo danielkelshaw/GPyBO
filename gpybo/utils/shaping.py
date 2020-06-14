@@ -31,16 +31,17 @@ def uprank(x: Any, n: int) -> Any:
 
 def to_tensor(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
-    def _tensor(x: Any) -> Any:
-
-        if isinstance(x, Tensor):
-            return x.type(torch.float32)
-        elif isinstance(x, (int, float, list, tuple, np.ndarray)):
-            return torch.tensor(x, dtype=torch.float32)
-        else:
-            return x
-
     def _decorated(*args: Any):
         return fn(*[_tensor(x) for x in args])
 
     return _decorated
+
+
+def _tensor(x: Any) -> Any:
+
+    if isinstance(x, Tensor):
+        return x.type(torch.float32)
+    elif isinstance(x, (int, float, list, tuple, np.ndarray)):
+        return torch.tensor(x, dtype=torch.float32)
+    else:
+        return x

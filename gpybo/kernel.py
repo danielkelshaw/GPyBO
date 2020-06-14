@@ -2,15 +2,28 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from typing import List, Union
+from typing import Any, List, Union
 
 from .utils.lab import pw_dist
+from .utils.shaping import _tensor
 
 
 class Kernel(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
+
+    def __add__(self, other: Any) -> 'SumKernel':
+        return SumKernel(self, other)
+
+    def __radd__(self, other: Any) -> 'SumKernel':
+        return SumKernel(other, self)
+
+    def __mul__(self, other: Any) -> 'ProductKernel':
+        return ProductKernel(self, other)
+
+    def __rmul__(self, other: Any) -> 'ProductKernel':
+        return ProductKernel(other, self)
 
     def __call__(self, x: Tensor, xp: Tensor) -> Tensor:
         return self.calculate(x, xp)
@@ -149,9 +162,30 @@ class Matern52Kernel(Kernel):
         return (1 + r1 + r2) * torch.exp(-r1)
 
 
-class SumKernel(Kernel):
+class CombinationKernel(Kernel):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def add(self, *args: Kernel):
+        raise NotImplementedError('CombinationKernel::add()')
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+        raise NotImplementedError('CombinationKernel::calculate()')
+
+
+class SumKernel(CombinationKernel):
 
     def __init__(self, *args: Kernel) -> None:
+
+        """Class for Summation of Multiple Kernels.
+
+        Parameters
+        ----------
+        args : Kernel
+            Kernels to add.
+        """
+
         super().__init__()
 
         self.kernels: List[Kernel] = []
@@ -160,14 +194,26 @@ class SumKernel(Kernel):
         self.add(*args)
 
     def add(self, *args: Kernel) -> None:
-        for idx, kernel in enumerate(args):
-            if isinstance(kernel, Kernel):
-                self.kernels.append(kernel)
 
+        """Adds Kernels to Class.
+
+        Parameters
+        ----------
+        args : Kernel
+            Kernels to add to class
+        """
+
+        for idx, kernel in enumerate(args):
+
+            if isinstance(kernel, SumKernel):
+                self.__init__(*(self.kernels + kernel.kernels))
+
+            elif isinstance(kernel, Kernel):
+                self.kernels.append(kernel)
                 kname = str(kernel.__class__.__name__)
                 self.kernel_names[kname] = self.kernel_names.get(kname, 0) + 1
-
                 self.add_module(f'{kname}_{self.kernel_names[kname]}', kernel)
+
             else:
                 raise ValueError('Must add a Kernel')
 
@@ -175,9 +221,18 @@ class SumKernel(Kernel):
         return torch.stack([kernel(x, xp) for kernel in self.kernels], dim=0).sum(dim=0)
 
 
-class ProductKernel(Kernel):
+class ProductKernel(CombinationKernel):
 
-    def __init__(self, *args: Union[Kernel, float]) -> None:
+    def __init__(self, *args: Union[Kernel, int, float, Tensor]) -> None:
+
+        """Class for Multiplication of Kernels.
+
+        Parameters
+        ----------
+        args : Kernel, int, float, Tensor
+            Values to use in kernel multiplication.
+        """
+
         super().__init__()
 
         self.kernels: List[Union[Kernel, Tensor]] = []
@@ -185,20 +240,31 @@ class ProductKernel(Kernel):
 
         self.add(*args)
 
-    def add(self, *args: Union[Kernel, float]) -> None:
-        for idx, kernel in enumerate(args):
-            if isinstance(kernel, Kernel):
-                self.kernels.append(kernel)
+    def add(self, *args: Union[Kernel, int, float, Tensor]) -> None:
 
+        """Adds Kernels to Class.
+
+        Parameters
+        ----------
+        args : Kernel
+            Kernels to add to class.
+        """
+
+        for idx, kernel in enumerate(args):
+
+            if isinstance(kernel, ProductKernel):
+                self.__init__(*(self.kernels + kernel.kernels))
+
+            elif isinstance(kernel, Kernel):
+                self.kernels.append(kernel)
                 kname = str(kernel.__class__.__name__)
                 self.kernel_names[kname] = self.kernel_names.get(kname, 0) + 1
-
                 self.add_module(f'{kname}_{self.kernel_names[kname]}', kernel)
-            elif isinstance(kernel, float):
-                self.kernels.append(torch.tensor(kernel, dtype=torch.float32))
+
+            elif isinstance(kernel, (int, float, Tensor)):
+                self.kernels.append(_tensor(kernel))
+
             else:
-                print(kernel)
-                print(type(kernel))
                 raise ValueError('Must add a Kernel')
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
