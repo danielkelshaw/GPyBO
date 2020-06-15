@@ -13,6 +13,14 @@ class Kernel(nn.Module):
     def __init__(self, *args: Union[int, float]) -> None:
         super().__init__()
 
+    def __repr__(self):
+        msg_list = []
+        for k, v in self.named_parameters():
+            msg_list.append(f'{k}={v:.3f}')
+
+        msg = super().__repr__().replace('()', '(' + ', '.join(msg_list) + ')')
+        return msg
+
     def __add__(self, other: Any) -> 'SumKernel':
         return SumKernel(self, other)
 
@@ -256,7 +264,6 @@ class ProductKernel(CombinationKernel):
         self.add(*args)
 
     def __repr__(self):
-
         return ''.join(
             [str(k) if not isinstance(k, CombinationKernel)
              else '[' + str(k) + ']' for k in self.kernels]
