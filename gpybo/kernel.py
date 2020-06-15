@@ -5,12 +5,12 @@ from torch import Tensor
 from typing import Any, List, Union
 
 from .utils.lab import pw_dist
-from .utils.shaping import _tensor
+from .utils.shaping import convert_tensor
 
 
 class Kernel(nn.Module):
 
-    def __init__(self) -> None:
+    def __init__(self, *args: Union[int, float]) -> None:
         super().__init__()
 
     def __add__(self, other: Any) -> 'SumKernel':
@@ -83,12 +83,24 @@ class Kernel(nn.Module):
 
 class SquaredExponentialKernel(Kernel):
 
-    def __init__(self) -> None:
+    def __init__(self,
+                 l: Union[int, float] = 1.0,
+                 sigma: Union[int, float] = 1.0) -> None:
+
+        """Squared Exponential Kernel
+
+        Parameters
+        ----------
+        l : int, float, Tensor
+            Lengthscale for Kernel
+        sigma : int, float, Tensor
+            Noise for Kernel.
+        """
 
         super().__init__()
 
-        self.l = nn.Parameter(torch.tensor(1.0))
-        self.sigma = nn.Parameter(torch.tensor(1.0))
+        self.l = nn.Parameter(convert_tensor(l))
+        self.sigma = nn.Parameter(convert_tensor(sigma))
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
 
@@ -262,7 +274,7 @@ class ProductKernel(CombinationKernel):
                 self.add_module(f'{kname}_{self.kernel_names[kname]}', kernel)
 
             elif isinstance(kernel, (int, float, Tensor)):
-                self.kernels.append(_tensor(kernel))
+                self.kernels.append(convert_tensor(kernel))
 
             else:
                 raise ValueError('Must add a Kernel')
