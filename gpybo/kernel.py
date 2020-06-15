@@ -205,6 +205,9 @@ class SumKernel(CombinationKernel):
 
         self.add(*args)
 
+    def __repr__(self):
+        return ' + '.join([str(k) for k in self.kernels])
+
     def add(self, *args: Kernel) -> None:
 
         """Adds Kernels to Class.
@@ -251,6 +254,13 @@ class ProductKernel(CombinationKernel):
         self.kernel_names = {}
 
         self.add(*args)
+
+    def __repr__(self):
+
+        return ''.join(
+            [str(k) if not isinstance(k, CombinationKernel)
+             else '[' + str(k) + ']' for k in self.kernels]
+        )
 
     def add(self, *args: Union[Kernel, int, float, Tensor]) -> None:
 

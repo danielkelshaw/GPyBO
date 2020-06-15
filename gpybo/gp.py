@@ -35,6 +35,9 @@ class GP(nn.Module):
         self.noise = self._set_noise(train_noise)
         self.optimiser = torch.optim.Adam
 
+    def __repr__(self):
+        return f'GP({str(self.kernel)})'
+
     @to_tensor
     @uprank_two
     def __call__(self, xp: Tensor) -> Tuple[Tensor, Tensor]:
