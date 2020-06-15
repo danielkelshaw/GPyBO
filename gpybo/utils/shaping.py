@@ -32,12 +32,12 @@ def uprank(x: Any, n: int) -> Any:
 def to_tensor(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
     def _decorated(*args: Any):
-        return fn(*[_tensor(x) for x in args])
+        return fn(*[convert_tensor(x) for x in args])
 
     return _decorated
 
 
-def _tensor(x: Any) -> Any:
+def convert_tensor(x: Any) -> Any:
 
     if isinstance(x, Tensor):
         return x.type(torch.float32)
