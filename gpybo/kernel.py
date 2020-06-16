@@ -14,10 +14,7 @@ class Kernel(nn.Module):
         super().__init__()
 
     def __repr__(self):
-        msg_list = []
-        for k, v in self.named_parameters():
-            msg_list.append(f'{k}={v:.3f}')
-
+        msg_list = [f'{k}={v:.3f}' for k, v in self.named_parameters()]
         msg = super().__repr__().replace('()', '(' + ', '.join(msg_list) + ')')
         return msg
 
@@ -26,6 +23,12 @@ class Kernel(nn.Module):
 
     def __radd__(self, other: Any) -> 'SumKernel':
         return SumKernel(other, self)
+
+    def __sub__(self, other: Any) -> 'SumKernel':
+        return SumKernel(self, (-1) * other)
+
+    def __rsub__(self, other: Any) -> 'SumKernel':
+        return SumKernel(other, (-1) * self)
 
     def __mul__(self, other: Any) -> 'ProductKernel':
         return ProductKernel(self, other)
@@ -236,6 +239,12 @@ class SumKernel(CombinationKernel):
                 kname = str(kernel.__class__.__name__)
                 self.kernel_names[kname] = self.kernel_names.get(kname, 0) + 1
                 self.add_module(f'{kname}_{self.kernel_names[kname]}', kernel)
+
+            elif isinstance(kernel, (int, float, Tensor)):
+                tmp_kernel = kernel * OneKernel()
+                self.kernels.append(tmp_kernel)
+                kname = str(kernel.__class__.__name__)
+                self.kernel_names[kname] = self.kernel_names.get(kname, 0) + 1
 
             else:
                 raise ValueError('Must add a Kernel')
