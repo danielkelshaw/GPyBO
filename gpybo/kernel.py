@@ -25,10 +25,13 @@ class Kernel(nn.Module):
         return SumKernel(other, self)
 
     def __sub__(self, other: Any) -> 'SumKernel':
-        return SumKernel(self, (-1) * other)
+        return SumKernel(self, -other)
 
     def __rsub__(self, other: Any) -> 'SumKernel':
-        return SumKernel(other, (-1) * self)
+        return SumKernel(other, -self)
+
+    def __neg__(self):
+        return ProductKernel(-1, self)
 
     def __mul__(self, other: Any) -> 'ProductKernel':
         return ProductKernel(self, other)
