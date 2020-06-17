@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from .kernel import Kernel
+from .mean import Mean, ZeroMean
 from .likelihood import GaussianLikelihood
 from .utils.shaping import to_tensor, uprank_two
 
@@ -26,6 +27,7 @@ class GP(nn.Module):
 
         super().__init__()
 
+        self.mean = ZeroMean()
         self.kernel = kernel
         self.likelihood = GaussianLikelihood()
 
@@ -203,7 +205,7 @@ class GP(nn.Module):
 
         k_xx_inv = torch.inverse(k_xx + self.noise * torch.eye(k_xx.shape[0]))
 
-        p_mean = k_xpx @ k_xx_inv @ self.y
+        p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ self.y
         p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
 
         return p_mean, p_covariance
