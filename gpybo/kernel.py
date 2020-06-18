@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+import re
 from typing import Any, List, Union
 
 from .utils.lab import pw_dist
@@ -217,7 +218,11 @@ class SumKernel(CombinationKernel):
         self.add(*args)
 
     def __repr__(self):
-        return ' + '.join([str(k) for k in self.kernels])
+        msg = ' + '.join([str(k) for k in self.kernels])
+        msg = re.sub(r'\+ -(\d*\.\d*)', r'- \1', msg)
+        msg = re.sub(r'[^=]1\.0', ' ', msg)
+        return msg
+
 
     def add(self, *args: Kernel) -> None:
 
@@ -273,10 +278,25 @@ class ProductKernel(CombinationKernel):
         self.add(*args)
 
     def __repr__(self):
-        return ''.join(
-            [str(k) if not isinstance(k, CombinationKernel)
-             else '[' + str(k) + ']' for k in self.kernels]
-        )
+
+        consts = [1.0]
+        msg_list = []
+        for k in self.kernels:
+            if not isinstance(k, CombinationKernel):
+                if isinstance(k, Tensor):
+                    consts[0] *= float(k)
+                else:
+                    msg_list.append(str(k))
+            else:
+                msg_list.append('[' + str(k) + ']')
+
+        consts = list(map(str, consts + msg_list))
+        return ''.join(consts)
+
+        # return ''.join(
+        #     [str(k) if not isinstance(k, CombinationKernel)
+        #      else '[' + str(k) + ']' for k in self.kernels]
+        # )
 
     def add(self, *args: Union[Kernel, int, float, Tensor]) -> None:
 
