@@ -1,13 +1,19 @@
 import torch
+import torch.nn as nn
 from torch import Tensor
 
 from .utils.shaping import to_tensor, uprank_two
 
 
-class Mean:
+class Mean(nn.Module):
 
     def __init__(self) -> None:
-        pass
+        super().__init__()
+
+    def __repr__(self):
+        msg_list = [f'{k}={v:.3f}' for k, v in self.named_parameters()]
+        msg = super().__repr__().replace('()', '(' + ', '.join(msg_list) + ')')
+        return msg
 
     def calculate(self, xp: Tensor) -> Tensor:
         raise NotImplementedError('Mean::calculate()')

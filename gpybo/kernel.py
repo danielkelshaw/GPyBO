@@ -294,12 +294,10 @@ class ProductKernel(CombinationKernel):
                 msg_list.append('[' + str(k) + ']')
 
         consts = list(map(str, consts + msg_list))
-        return ''.join(consts)
+        msg = ''.join(consts)
 
-        # return ''.join(
-        #     [str(k) if not isinstance(k, CombinationKernel)
-        #      else '[' + str(k) + ']' for k in self.kernels]
-        # )
+        msg = re.sub(r'^1.0', '', msg)
+        return msg
 
     def add(self, *args: Union[Kernel, int, float, Tensor]) -> None:
 
