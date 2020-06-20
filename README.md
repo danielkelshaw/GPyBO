@@ -19,7 +19,7 @@ y = np.sin(x)
 gp = GP(SquaredExponentialKernel()) | (x, y)
 gp.train(n_restarts=10)
 
-mu, cov = gp(np.linspace(-5, 5, 100))
+mv_norm = gp(np.linspace(-5, 5, 100))
 ```
 
 ![GP Example](./media/gp_example.png)
