@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+from .distributions import Normal
 from .kernel import Kernel
 from .mean import Mean, ZeroMean
 from .likelihood import GaussianLikelihood
@@ -181,7 +182,7 @@ class GP(nn.Module):
 
     @to_tensor
     @uprank_two
-    def predictive_posterior(self, xp: Any) -> Tuple[Tensor, Tensor]:
+    def predictive_posterior(self, xp: Any) -> Normal:
 
         """Predicts the Posterior.
 
@@ -192,10 +193,8 @@ class GP(nn.Module):
 
         Returns
         -------
-        p_mean : Tensor
-            Mean of the predictive posterior.
-        p_cov : Tensor
-            Covariance of the predictive posterior.
+        Normal
+            Normal distribution with calculated mu and covariance.
         """
 
         k_xx = self.kernel.calculate(self.x, self.x)
@@ -208,7 +207,7 @@ class GP(nn.Module):
         p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ self.y
         p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
 
-        return p_mean, p_covariance
+        return Normal(mu=p_mean, covariance=p_covariance)
 
     def __or__(self, other: Sequence[Any]) -> 'GP':
 
