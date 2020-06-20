@@ -24,7 +24,9 @@ class TestGP:
         xp = torch.arange(-5, 5, 0.5)
 
         gp = gp | (x, y)
-        mu_s, cov_s = gp.predictive_posterior(xp)
+        norm = gp.predictive_posterior(xp)
+        mu_s = norm.mu
+        cov_s = norm.covariance
 
         assert mu_s.shape == (20, 1)
         assert cov_s.shape == (20, 20)
