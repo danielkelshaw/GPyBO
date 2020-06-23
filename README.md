@@ -31,6 +31,18 @@ mv_norm = gp(np.linspace(-5, 5, 100))
 GP(ZeroMean(), SquaredExponentialKernel(l=2.500, sigma=0.100))
 ```
 
+### **Bayesian Optimisation:**
+
+```python
+import torch
+
+def opt_apply_fn(x):
+    return -torch.pow(6 * x - 2, 2) * torch.sin(12 * x - 4)
+
+bo = BO(model=gp, bounds=torch.tensor([[0.0, 1.0]], dtype=torch.float32), fn=opt_apply_fn)
+bo.fn_optimise(observation_budget=10)
+```
+
 ### **Kernel Composition:**
 The provided kernels can be combined in a number of ways in order to increase
 the complexity of the kernel composition. Representations of these combination
