@@ -45,3 +45,23 @@ class ExpectedImprovement(BaseAcquisitionFunction):
         ei[torch.isnan(ei)] = 0.0
 
         return ei
+
+
+class ProbabilityOfImprovement(BaseAcquisitionFunction):
+
+    def __init__(self, model: GP) -> None:
+        super().__init__(model)
+
+    @to_tensor
+    @uprank_two
+    def forward(self, x: Tensor) -> Tensor:
+
+        if not x.numel() == 1:
+            raise ValueError('PoI can only sample one value at a time.')
+
+        mean = self.model.mean(x)
+        cov = self.model.kernel(x, x)
+
+        normal = Normal(mean, cov)
+
+        return normal.cdf(x)
