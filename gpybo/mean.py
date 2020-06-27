@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
+from typing import List
 
 from .utils.shaping import to_tensor, uprank_two
 
@@ -31,3 +32,30 @@ class ZeroMean(Mean):
     @uprank_two
     def calculate(self, xp: Tensor) -> Tensor:
         return torch.zeros_like(xp)
+
+
+class MOMean(Mean):
+
+    def __init__(self, means: List[Mean]) -> None:
+
+        super().__init__()
+        self.means = means
+        for idx, m in enumerate(self.means):
+            self.add_module(str(idx), m)
+
+    @property
+    def n_means(self):
+        return len(self.means)
+
+    def calculate(self, xp: Tensor) -> Tensor:
+
+        output_mean = torch.zeros((self.n_means * xp.numel(), 1), dtype=torch.float32)
+
+        for idx, mean in enumerate(self.means):
+
+            xp_start = idx * xp.numel()
+            xp_end = xp_start + xp.numel()
+
+            output_mean[xp_start : xp_end] = mean.calculate(xp)
+
+        return output_mean

@@ -338,3 +338,35 @@ class ProductKernel(CombinationKernel):
                 raise ValueError('Invalid Type.')
 
         return torch.stack(vals, dim=0).prod(dim=0)
+
+
+class MOKernel(Kernel):
+
+    def __init__(self, kernels: List[Kernel]) -> None:
+
+        super().__init__()
+        self.kernels = kernels
+        for idx, k in enumerate(self.kernels):
+            self.add_module(str(idx), k)
+
+    @property
+    def n_kernels(self) -> int:
+        return len(self.kernels)
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+
+        x_numel = self.n_kernels * x.numel()
+        xp_numel = self.n_kernels * xp.numel()
+        output_kernel = torch.zeros((x_numel, xp_numel), dtype=torch.float32)
+
+        for idx, kernel in enumerate(self.kernels):
+
+            x_start = idx * x.numel()
+            x_end = x_start + x.numel()
+
+            xp_start = idx * xp.numel()
+            xp_end = xp_start + xp.numel()
+
+            output_kernel[x_start : x_end, xp_start : xp_end] = kernel.calculate(x, xp)
+
+        return output_kernel
