@@ -345,9 +345,17 @@ class MOKernel(Kernel):
     def __init__(self, kernels: List[Kernel]) -> None:
 
         super().__init__()
+
+        for k in kernels:
+            if not isinstance(k, Kernel):
+                raise TypeError(f'{k} must be a Kernel.')
+
         self.kernels = kernels
         for idx, k in enumerate(self.kernels):
             self.add_module(str(idx), k)
+
+    def __getitem__(self, item):
+        return self.kernels[item]
 
     @property
     def n_kernels(self) -> int:

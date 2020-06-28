@@ -39,9 +39,17 @@ class MOMean(Mean):
     def __init__(self, means: List[Mean]) -> None:
 
         super().__init__()
+
+        for m in means:
+            if not isinstance(m, Mean):
+                raise TypeError(f'{m} must be a Mean.')
+
         self.means = means
         for idx, m in enumerate(self.means):
             self.add_module(str(idx), m)
+
+    def __getitem__(self, item):
+        return self.means[item]
 
     @property
     def n_means(self):
