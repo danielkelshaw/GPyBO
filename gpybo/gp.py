@@ -6,8 +6,8 @@ import torch.nn as nn
 from torch import Tensor
 
 from .distributions import Normal
-from .kernel import Kernel
-from .mean import Mean, ZeroMean
+from .kernel import Kernel, MOKernel
+from .mean import Mean, ZeroMean, MOMean
 from .likelihood import GaussianLikelihood
 from .utils.shaping import to_tensor, uprank_two
 
@@ -204,7 +204,7 @@ class GP(nn.Module):
 
         k_xx_inv = torch.inverse(k_xx + self.noise * torch.eye(k_xx.shape[0]))
 
-        p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ self.y
+        p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ self.y.view(-1, 1)
         p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
 
         return Normal(mu=p_mean, covariance=p_covariance)
@@ -216,3 +216,32 @@ class GP(nn.Module):
 
         self.observe(*other)
         return self
+
+
+class MOGP(GP):
+
+    def __init__(self, means: MOMean, kernels: MOKernel):
+
+        if not len(means) == len(kernels):
+            raise ValueError('Need same number of means and kernels.')
+
+        super().__init__(kernels, train_noise=False)
+        self.mean = means
+
+    @property
+    def n_outputs(self):
+        return len(self.mean)
+
+    @to_tensor
+    @uprank_two
+    def observe(self, x: Any, y: Any) -> None:
+
+        if not y.shape[0] == self.n_outputs:
+            raise ValueError(f'shape of y ({y.shape}) does not match n_outputs.')
+
+        if self.x is None and self.y is None:
+            self.x = x
+            self.y = y
+        else:
+            self.x = torch.cat([self.x, x], dim=0)
+            self.y = torch.cat([self.y, y], dim=0)

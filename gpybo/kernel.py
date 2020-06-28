@@ -357,6 +357,9 @@ class MOKernel(Kernel):
     def __getitem__(self, item):
         return self.kernels[item]
 
+    def __len__(self):
+        return len(self.kernels)
+
     @property
     def n_kernels(self) -> int:
         return len(self.kernels)
