@@ -65,4 +65,4 @@ class GaussianLikelihood(Likelihood):
 
             ll = -y_term - log_term - const_term
 
-        return ll
+        return ll.flatten()
