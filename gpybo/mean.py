@@ -51,6 +51,9 @@ class MOMean(Mean):
     def __getitem__(self, item):
         return self.means[item]
 
+    def __len__(self):
+        return len(self.means)
+
     @property
     def n_means(self):
         return len(self.means)
