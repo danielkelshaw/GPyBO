@@ -40,6 +40,9 @@ class Kernel(nn.Module):
     def __rmul__(self, other: Any) -> 'ProductKernel':
         return ProductKernel(other, self)
 
+    def __len__(self):
+        return 1
+
     def __call__(self, x: Tensor, xp: Tensor) -> Tensor:
         return self.calculate(x, xp)
 
