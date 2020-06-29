@@ -45,3 +45,7 @@ def convert_tensor(x: Any) -> Any:
         return torch.tensor(x, dtype=torch.float32)
     else:
         return x
+
+
+def unwrap(x: Tensor):
+    return torch.stack(x.unbind(1)).view(-1, 1)

@@ -19,6 +19,9 @@ class Mean(nn.Module):
         msg = super().__repr__().replace('()', '(' + ', '.join(msg_list) + ')')
         return msg
 
+    def __len__(self) -> int:
+        return 1
+
     def calculate(self, xp: Tensor) -> Tensor:
         raise NotImplementedError('Mean::calculate()')
 

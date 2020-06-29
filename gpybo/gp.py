@@ -9,12 +9,12 @@ from .distributions import Normal
 from .kernel import Kernel, MOKernel
 from .mean import Mean, ZeroMean, MOMean
 from .likelihood import GaussianLikelihood
-from .utils.shaping import to_tensor, uprank_two
+from .utils.shaping import to_tensor, uprank_two, unwrap
 
 
 class GP(nn.Module):
 
-    def __init__(self, kernel: Kernel, train_noise: bool = False) -> None:
+    def __init__(self, kernel: Kernel, mean: Mean = ZeroMean(), train_noise: bool = False) -> None:
 
         """Gaussian Process Class.
 
@@ -28,7 +28,10 @@ class GP(nn.Module):
 
         super().__init__()
 
-        self.mean = ZeroMean()
+        if not len(mean) == len(kernel):
+            raise ValueError('Need same number of means and kernels.')
+
+        self.mean = mean
         self.kernel = kernel
         self.likelihood = GaussianLikelihood()
 
@@ -41,10 +44,22 @@ class GP(nn.Module):
     def __repr__(self):
         return f'GP({str(self.mean)}, {str(self.kernel)})'
 
+    def __or__(self, other: Sequence[Any]) -> 'GP':
+
+        if not len(other) == 2:
+            raise ValueError('Must provide (x, y)')
+
+        self.observe(*other)
+        return self
+
     @to_tensor
     @uprank_two
-    def __call__(self, xp: Tensor) -> Tuple[Tensor, Tensor]:
+    def __call__(self, xp: Tensor) -> Normal:
         return self.predictive_posterior(xp)
+
+    @property
+    def n_outputs(self) -> int:
+        return len(self.mean)
 
     @staticmethod
     def _set_noise(noise: bool) -> Tensor:
@@ -83,7 +98,7 @@ class GP(nn.Module):
         """
 
         ll = self.likelihood.log_likelihood(
-            self.kernel, self.x, self.y, self.noise, stable
+            self.kernel, self.x, unwrap(self.y), self.noise, stable
         )
         return ll
 
@@ -170,15 +185,16 @@ class GP(nn.Module):
             Observations.
         """
 
+        if not y.shape[1] == self.n_outputs:
+            raise ValueError(
+                f'shape of y ({y.shape}) does not match n_outputs.')
+
         if self.x is None and self.y is None:
             self.x = x
             self.y = y
         else:
             self.x = torch.cat([self.x, x], dim=0)
             self.y = torch.cat([self.y, y], dim=0)
-
-        if not self.y.shape[1] == 1:
-            raise ValueError('y must be a column vector')
 
     @to_tensor
     @uprank_two
@@ -204,44 +220,7 @@ class GP(nn.Module):
 
         k_xx_inv = torch.inverse(k_xx + self.noise * torch.eye(k_xx.shape[0]))
 
-        p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ self.y.view(-1, 1)
+        p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ unwrap(self.y)
         p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
 
         return Normal(mu=p_mean, covariance=p_covariance)
-
-    def __or__(self, other: Sequence[Any]) -> 'GP':
-
-        if not len(other) == 2:
-            raise ValueError('Must provide (x, y)')
-
-        self.observe(*other)
-        return self
-
-
-class MOGP(GP):
-
-    def __init__(self, means: MOMean, kernels: MOKernel):
-
-        if not len(means) == len(kernels):
-            raise ValueError('Need same number of means and kernels.')
-
-        super().__init__(kernels, train_noise=False)
-        self.mean = means
-
-    @property
-    def n_outputs(self):
-        return len(self.mean)
-
-    @to_tensor
-    @uprank_two
-    def observe(self, x: Any, y: Any) -> None:
-
-        if not y.shape[0] == self.n_outputs:
-            raise ValueError(f'shape of y ({y.shape}) does not match n_outputs.')
-
-        if self.x is None and self.y is None:
-            self.x = x
-            self.y = y
-        else:
-            self.x = torch.cat([self.x, x], dim=0)
-            self.y = torch.cat([self.y, y], dim=0)

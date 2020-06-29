@@ -42,8 +42,6 @@ class GaussianLikelihood(Likelihood):
             Log Likelihood of outputs given the data.
         """
 
-        y = y.view(-1, 1)
-
         kern = kernel.calculate(x, x)
         K = kern + noise * torch.eye(kern.shape[0])
 
