@@ -213,14 +213,16 @@ class GP(nn.Module):
             Normal distribution with calculated mu and covariance.
         """
 
-        k_xx = self.kernel.calculate(self.x, self.x)
-        k_xxp = self.kernel.calculate(self.x, xp)
-        k_xpx = self.kernel.calculate(xp, self.x)
-        k_xpxp = self.kernel.calculate(xp, xp)
+        with torch.no_grad():
 
-        k_xx_inv = torch.inverse(k_xx + self.noise * torch.eye(k_xx.shape[0]))
+            k_xx = self.kernel.calculate(self.x, self.x)
+            k_xxp = self.kernel.calculate(self.x, xp)
+            k_xpx = self.kernel.calculate(xp, self.x)
+            k_xpxp = self.kernel.calculate(xp, xp)
 
-        p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ unwrap(self.y)
-        p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
+            k_xx_inv = torch.inverse(k_xx + self.noise * torch.eye(k_xx.shape[0]))
+
+            p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ unwrap(self.y)
+            p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
 
         return Normal(mu=p_mean, covariance=p_covariance)
