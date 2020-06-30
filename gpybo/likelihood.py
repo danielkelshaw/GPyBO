@@ -57,7 +57,7 @@ class GaussianLikelihood(Likelihood):
 
             ll = y_alpha - trace_log - const
         else:
-            log_term = 0.5 * torch.log(torch.det(K))
+            log_term = 0.5 * torch.log(1e-6 + torch.det(K))
             y_term = 0.5 * y.T @ torch.inverse(K) @ y
             const_term = 0.5 * len(x) * np.log(2 * np.pi)
 
