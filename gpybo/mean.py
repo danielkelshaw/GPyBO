@@ -34,7 +34,7 @@ class ZeroMean(Mean):
     @to_tensor
     @uprank_two
     def calculate(self, xp: Tensor) -> Tensor:
-        return torch.zeros_like(xp)
+        return torch.zeros(xp.shape[0], 1)
 
 
 class MOMean(Mean):
