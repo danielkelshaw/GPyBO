@@ -4,6 +4,7 @@ from typing import Any, Sequence, Tuple
 import torch
 import torch.nn as nn
 from torch import Tensor
+from torch.distributions.multivariate_normal import MultivariateNormal
 
 from .distributions import Normal
 from .kernel import Kernel, MOKernel
@@ -195,6 +196,25 @@ class GP(nn.Module):
         else:
             self.x = torch.cat([self.x, x], dim=0)
             self.y = torch.cat([self.y, y], dim=0)
+
+    @to_tensor
+    @uprank_two
+    def posterior(self, x: Any) -> MultivariateNormal:
+
+        norm = self.predictive_posterior(x)
+        mu, cov = norm.mu.flatten(), norm.covariance
+
+        mv_norm = None
+        pd = False
+
+        while not pd:
+            try:
+                mv_norm = MultivariateNormal(mu, cov)
+                pd = True
+            except:
+                cov += 1e-6 * torch.eye(cov.shape[0])
+
+        return mv_norm
 
     @to_tensor
     @uprank_two
