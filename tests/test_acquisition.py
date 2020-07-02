@@ -14,7 +14,7 @@ class TestExpectedImprovement:
         y = torch.sin(x)
 
         gp = GP(SquaredExponentialKernel()) | (x, y)
-        ei = ExpectedImprovement(gp)
+        ei = ExpectedImprovement(gp, alpha=0.0)
 
         xp = torch.tensor(2, dtype=torch.float32)
         ret_val = ei(xp)
