@@ -83,7 +83,7 @@ class qExpectedImprovement(BaseAcquisitionFunction):
     def forward(self, x: Tensor) -> Tensor:
 
         mv_norm = self.model.posterior(x)
-        samples = mv_norm.rsample((1, 512))
+        samples = mv_norm.rsample((1, 512)).requires_grad_(True)
 
         best_f = self.model.y.max()
         qei = (samples - best_f - self.alpha).clamp_min(0)
