@@ -4,7 +4,8 @@ import torch
 from torch import Tensor
 
 from .gp import GP
-from .acquisition import ExpectedImprovement
+from .acquisition import qExpectedImprovement
+from .utils.samplers import draw_sobol
 
 
 class BO:
@@ -32,13 +33,14 @@ class BO:
         self.lb = bounds[:, 0]
         self.ub = bounds[:, 1]
 
-        self.acquisition = ExpectedImprovement
+        self.acquisition = qExpectedImprovement
         self.opt_acquisition = torch.optim.Adam
 
         self.fn = fn
 
     def _optimise_acquisition(self,
-                              n_iterations: int = 1000) -> Tuple[Tensor, Tensor]:
+                              n_iterations: int = 1000,
+                              n_samples: int = 100) -> Tuple[Tensor, Tensor]:
 
         """Optimises the Acquisition Function.
 
@@ -55,15 +57,19 @@ class BO:
             Value of the acquisition function.
         """
 
-        _x = self.lb + (self.ub - self.lb) * torch.rand(self.lb.shape)
-        _x.requires_grad_(True)
-
-        ei_optimiser = self.opt_acquisition(params=[_x], lr=0.025)
         acquisition = self.acquisition(self.model)
+
+        # instead of starting with one random position, pick n
+        _x = draw_sobol(self.bounds, n_samples)
+
+        # find best from the drawn sample
+        xopt = _x[acquisition(_x).argmax()].requires_grad_()
+
+        ei_optimiser = self.opt_acquisition(params=[xopt], lr=0.025)
 
         for i in range(n_iterations):
 
-            loss = -acquisition(_x)
+            loss = -acquisition(xopt)
 
             def closure():
                 ei_optimiser.zero_grad()
@@ -72,7 +78,7 @@ class BO:
 
             ei_optimiser.step(closure)
 
-        return _x.requires_grad_(False), loss
+        return xopt.requires_grad_(False), loss
 
     def optimise(self,
                  n_restarts: int = 10,
@@ -100,6 +106,8 @@ class BO:
 
         for i in range(n_restarts):
 
+            print(f'\trestart {i:02}')
+
             x, loss = self._optimise_acquisition(n_iterations=n_iterations)
 
             losses.append(loss)
@@ -125,6 +133,8 @@ class BO:
         """
 
         for i in range(observation_budget):
+
+            print(f'Observation {i:02}')
 
             x_sample, _ = self.optimise()
 

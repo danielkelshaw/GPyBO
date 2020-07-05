@@ -212,7 +212,7 @@ class GP(nn.Module):
                 mv_norm = MultivariateNormal(mu, cov)
                 pd = True
             except:
-                cov += 1e-6 * torch.eye(cov.shape[0])
+                cov += 1e-4 * torch.eye(cov.shape[0])
 
         return mv_norm
 
