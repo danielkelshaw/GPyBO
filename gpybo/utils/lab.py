@@ -22,3 +22,26 @@ def pw_dist(x: Tensor, xp: Tensor) -> Tensor:
     dst = torch.sqrt(torch.max(sq_dst, torch.tensor(1e-16)))
 
     return dst
+
+
+def pd_jitter(k: Tensor) -> Tensor:
+
+    if (len(k.shape) != 2) or (k.shape[0] != k.shape[1]):
+        raise ValueError('Must be a Square Matrix.')
+
+    pd = False
+    jitter = k.diag().mean() * 1e-6
+
+    tries = 0
+
+    while not pd:
+
+        try:
+            L = torch.cholesky(k)
+            pd = True
+        except RuntimeError:
+            jitter *= 10
+            k += jitter * torch.eye(k.shape[0])
+            tries += 1
+
+    return k

@@ -11,6 +11,7 @@ from .kernel import Kernel, MOKernel
 from .mean import Mean, ZeroMean, MOMean
 from .likelihood import GaussianLikelihood
 from .utils.shaping import to_tensor, uprank_two, unwrap
+from .utils.lab import pd_jitter
 
 
 class GP(nn.Module):
@@ -204,15 +205,8 @@ class GP(nn.Module):
         norm = self.predictive_posterior(x)
         mu, cov = norm.mu.flatten(), norm.covariance
 
-        mv_norm = None
-        pd = False
-
-        while not pd:
-            try:
-                mv_norm = MultivariateNormal(mu, cov)
-                pd = True
-            except:
-                cov += 1e-4 * torch.eye(cov.shape[0])
+        cov = pd_jitter(cov)
+        mv_norm = MultivariateNormal(mu, cov)
 
         return mv_norm
 
