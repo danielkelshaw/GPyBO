@@ -63,7 +63,7 @@ class BO:
         _x = draw_sobol(self.bounds, n_samples)
 
         # find best from the drawn sample
-        xopt = _x[acquisition(_x).argmax()].requires_grad_()
+        xopt = _x[acquisition(_x).argmax()][None, :].requires_grad_()
 
         ei_optimiser = self.opt_acquisition(params=[xopt], lr=0.025)
 
