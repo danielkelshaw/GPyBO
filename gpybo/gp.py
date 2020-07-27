@@ -10,6 +10,7 @@ from .distributions import Normal
 from .kernel import Kernel, MOKernel
 from .mean import Mean, ZeroMean, MOMean
 from .likelihood import GaussianLikelihood
+from .utils.early_stopping import EarlyStopping
 from .utils.shaping import to_tensor, uprank_two, unwrap
 from .utils.lab import pd_jitter
 
@@ -104,7 +105,7 @@ class GP(nn.Module):
         )
         return ll
 
-    def optimise(self, max_iter: int = 1000) -> Tensor:
+    def optimise(self, max_iter: int = 1000, patience: int = 10) -> Tensor:
 
         """Optimise GP Parameters.
 
@@ -112,6 +113,8 @@ class GP(nn.Module):
         ----------
         max_iter : int
             Number of iterations to run.
+        patience : int
+            Patience used in EarlyStopping.
 
         Returns
         -------
@@ -124,9 +127,14 @@ class GP(nn.Module):
 
         loss = None
         optimiser = self.optimiser(self.parameters())
+        es = EarlyStopping(patience=patience)
+
         for i in range(max_iter):
 
             loss = -self.log_likelihood(stable=False)
+
+            if es(loss):
+                break
 
             def closure():
                 optimiser.zero_grad()
