@@ -36,8 +36,8 @@ class ExpectedImprovement(BaseAcquisitionFunction):
 
         best_f = torch.max(self.model.y).to(x)
         posterior_norm = self.model(x)
-        posterior_mu = posterior_norm.mu
-        posterior_cov = posterior_norm.covariance
+        posterior_mu = posterior_norm.mean
+        posterior_cov = posterior_norm.covariance_matrix
 
         sigma = posterior_cov.diag().sqrt().clamp_min(1e-9).view(x.shape)
         u = (posterior_mu - best_f.expand_as(posterior_mu) - self.alpha) / sigma

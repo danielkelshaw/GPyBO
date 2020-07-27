@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Sequence, Tuple
+from typing import Any, Sequence
 
 import torch
 import torch.nn as nn
@@ -7,8 +7,8 @@ from torch import Tensor
 from torch.distributions.multivariate_normal import MultivariateNormal
 
 from .distributions import Normal
-from .kernel import Kernel, MOKernel
-from .mean import Mean, ZeroMean, MOMean
+from .kernel import Kernel
+from .mean import Mean, ZeroMean
 from .likelihood import GaussianLikelihood
 from .utils.early_stopping import EarlyStopping
 from .utils.shaping import to_tensor, uprank_two, unwrap
@@ -58,7 +58,7 @@ class GP(nn.Module):
     @to_tensor
     @uprank_two
     def __call__(self, xp: Tensor) -> Normal:
-        return self.predictive_posterior(xp)
+        return self.posterior(xp)
 
     @property
     def n_outputs(self) -> int:
@@ -208,19 +208,7 @@ class GP(nn.Module):
 
     @to_tensor
     @uprank_two
-    def posterior(self, x: Any) -> MultivariateNormal:
-
-        norm = self.predictive_posterior(x)
-        mu, cov = norm.mu.flatten(), norm.covariance
-
-        cov = pd_jitter(cov)
-        mv_norm = MultivariateNormal(mu, cov)
-
-        return mv_norm
-
-    @to_tensor
-    @uprank_two
-    def predictive_posterior(self, xp: Any) -> Normal:
+    def posterior(self, xp: Any) -> MultivariateNormal:
 
         """Predicts the Posterior.
 
@@ -247,4 +235,7 @@ class GP(nn.Module):
             p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ unwrap(self.y)
             p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
 
-        return Normal(mu=p_mean, covariance=p_covariance)
+            p_mean = p_mean.flatten()
+            p_covariance = pd_jitter(p_covariance)
+
+        return MultivariateNormal(p_mean, p_covariance)
