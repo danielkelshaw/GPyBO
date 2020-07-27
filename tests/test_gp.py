@@ -16,7 +16,7 @@ class TestGP:
 
         return gp
 
-    def test_predictive_posterior(self, gp):
+    def test_posterior(self, gp):
 
         x = torch.tensor([-4, -3, -2, -1, 1], dtype=torch.float32)
         y = torch.sin(x)
@@ -24,11 +24,11 @@ class TestGP:
         xp = torch.arange(-5, 5, 0.5)
 
         gp = gp | (x, y)
-        norm = gp.predictive_posterior(xp)
-        mu_s = norm.mu
-        cov_s = norm.covariance
+        norm = gp.posterior(xp)
+        mu_s = norm.mean
+        cov_s = norm.covariance_matrix
 
-        assert mu_s.shape == (20, 1)
+        assert mu_s.shape == (20, )
         assert cov_s.shape == (20, 20)
 
         assert isinstance(mu_s, Tensor)
