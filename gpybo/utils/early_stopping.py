@@ -39,7 +39,7 @@ class EarlyStopping:
 
         if self.best_loss is None:
             self.best_loss = loss
-        elif loss > self.best_loss + self.delta:
+        elif loss >= self.best_loss - self.delta:
             self.counter += 1
             if self.counter >= self.patience:
                 self.early_stop = True
