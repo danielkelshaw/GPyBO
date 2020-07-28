@@ -39,7 +39,7 @@ class ExpectedImprovement(BaseAcquisitionFunction):
         posterior_mu = posterior_norm.mean
         posterior_cov = posterior_norm.covariance_matrix
 
-        sigma = posterior_cov.diag().sqrt().clamp_min(1e-9).view(x.shape)
+        sigma = posterior_cov.diag().sqrt().clamp_min(1e-9).view(posterior_mu.shape)
         u = (posterior_mu - best_f.expand_as(posterior_mu) - self.alpha) / sigma
 
         normal = Normal(torch.zeros_like(u), torch.ones_like(u))

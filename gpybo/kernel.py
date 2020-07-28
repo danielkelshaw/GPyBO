@@ -229,7 +229,6 @@ class SumKernel(CombinationKernel):
         msg = re.sub(r'[^=]1\.0', ' ', msg)
         return msg
 
-
     def add(self, *args: Kernel) -> None:
 
         """Adds Kernels to Class.

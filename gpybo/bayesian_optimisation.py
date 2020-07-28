@@ -6,13 +6,15 @@ from torch import Tensor
 from .gp import GP
 from .acquisition import qExpectedImprovement
 from .utils.samplers import draw_sobol
+from .utils.optim import scipy_acqopt
 
 
 class BO:
 
     def __init__(self,
                  model: GP,
-                 bounds: Tensor,
+                 lb: Tensor,
+                 ub: Tensor,
                  fn: Callable[[Any], Any]) -> None:
 
         """Bayesian Optimisation.
@@ -21,64 +23,47 @@ class BO:
         ----------
         model : GP
             Gaussian Process Model.
-        bounds : Tensor
-            Lower / Upper Bounds.
+        lb : Tensor
+            Lower bounds.
+        ub : Tensor
+            Upper bounds.
         fn : function
             Function to optimise.
         """
 
         self.model = model
 
-        self.bounds = bounds
-        self.lb = bounds[:, 0]
-        self.ub = bounds[:, 1]
+        self.lb = lb
+        self.ub = ub
 
         self.acquisition = qExpectedImprovement
         self.opt_acquisition = torch.optim.Adam
 
         self.fn = fn
 
-    def _optimise_acquisition(self,
-                              n_iterations: int = 1000,
-                              n_samples: int = 100) -> Tuple[Tensor, Tensor]:
+    def _optimise_acquisition(self, n_samples: int = 100) -> Tuple[Tensor, float]:
 
         """Optimises the Acquisition Function.
 
         Parameters
         ----------
-        n_iterations : int
-            Number of iterations to optimise for.
+        n_samples : int
+            Number of initial samples to draw.
 
         Returns
         -------
-        _x : Tensor
+        xopt : Tensor
             X-value which maximises the acquisition function.
-        loss : Tensor
-            Value of the acquisition function.
         """
 
         acquisition = self.acquisition(self.model)
 
         # instead of starting with one random position, pick n
-        _x = draw_sobol(self.bounds, n_samples)
+        _x = draw_sobol(torch.stack((self.lb, self.ub), -1), n_samples)
+        xopt = _x[acquisition(_x).argmax()]
+        xopt, loss = scipy_acqopt(xopt, self.lb, self.ub, acquisition)
 
-        # find best from the drawn sample
-        xopt = _x[acquisition(_x).argmax()][None, :].requires_grad_()
-
-        ei_optimiser = self.opt_acquisition(params=[xopt], lr=0.025)
-
-        for i in range(n_iterations):
-
-            loss = -acquisition(xopt)
-
-            def closure():
-                ei_optimiser.zero_grad()
-                loss.backward()
-                return loss
-
-            ei_optimiser.step(closure)
-
-        return xopt.requires_grad_(False), loss
+        return xopt, loss
 
     def optimise(self,
                  n_restarts: int = 10,
@@ -106,9 +91,7 @@ class BO:
 
         for i in range(n_restarts):
 
-            print(f'\trestart {i:02}')
-
-            x, loss = self._optimise_acquisition(n_iterations=n_iterations)
+            x, loss = self._optimise_acquisition()
 
             losses.append(loss)
             candidates.append(x)

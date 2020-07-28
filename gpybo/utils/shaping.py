@@ -31,6 +31,7 @@ def uprank(x: Any, n: int) -> Any:
 
 def to_tensor(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
+    @functools.wraps(fn)
     def _decorated(*args: Any):
         return fn(*[convert_tensor(x) for x in args])
 
@@ -43,6 +44,25 @@ def convert_tensor(x: Any) -> Any:
         return x.type(torch.float32)
     elif isinstance(x, (int, float, list, tuple, np.ndarray)):
         return torch.tensor(x, dtype=torch.float32)
+    else:
+        return x
+
+
+def to_array(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
+
+    @functools.wraps(fn)
+    def _decorated(*args: Any):
+        return fn(*[convert_array(x) for x in args])
+
+    return _decorated()
+
+
+def convert_array(x: Any) -> Any:
+
+    if isinstance(x, (int, float, list, tuple)):
+        return np.array(x)
+    elif isinstance(x, Tensor):
+        return x.numpy()
     else:
         return x
 

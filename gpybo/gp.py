@@ -223,19 +223,19 @@ class GP(nn.Module):
             Normal distribution with calculated mu and covariance.
         """
 
-        with torch.no_grad():
+        # with torch.no_grad():
 
-            k_xx = self.kernel.calculate(self.x, self.x)
-            k_xxp = self.kernel.calculate(self.x, xp)
-            k_xpx = self.kernel.calculate(xp, self.x)
-            k_xpxp = self.kernel.calculate(xp, xp)
+        k_xx = self.kernel.calculate(self.x, self.x)
+        k_xxp = self.kernel.calculate(self.x, xp)
+        k_xpx = self.kernel.calculate(xp, self.x)
+        k_xpxp = self.kernel.calculate(xp, xp)
 
-            k_xx_inv = torch.inverse(k_xx + self.noise * torch.eye(k_xx.shape[0]))
+        k_xx_inv = torch.inverse(k_xx + self.noise * torch.eye(k_xx.shape[0]))
 
-            p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ unwrap(self.y)
-            p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
+        p_mean = self.mean.calculate(xp) + k_xpx @ k_xx_inv @ unwrap(self.y)
+        p_covariance = k_xpxp - k_xpx @ k_xx_inv @ k_xxp
 
-            p_mean = p_mean.flatten()
-            p_covariance = pd_jitter(p_covariance)
+        p_mean = p_mean.flatten()
+        p_covariance = pd_jitter(p_covariance)
 
         return MultivariateNormal(p_mean, p_covariance)
