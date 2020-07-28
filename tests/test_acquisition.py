@@ -22,6 +22,6 @@ class TestExpectedImprovement:
         target = torch.tensor([[0.1868]])
 
         assert isinstance(ret_val, Tensor)
-        assert ret_val.shape == (1, 1)
+        assert ret_val.shape == (1,)
 
         assert torch.allclose(ret_val, target, atol=1e-3)
