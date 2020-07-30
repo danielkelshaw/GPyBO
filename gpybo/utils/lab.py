@@ -33,7 +33,7 @@ def pd_jitter(k: Tensor) -> Tensor:
     jitter = k.diag().mean() * 1e-6
 
     tries = 0
-
+    max_tries = 5
     while not pd:
 
         try:
@@ -43,5 +43,8 @@ def pd_jitter(k: Tensor) -> Tensor:
             jitter *= 10
             k += jitter * torch.eye(k.shape[0])
             tries += 1
+        finally:
+            if tries > max_tries:
+                raise ValueError('Not PD, even with jitter.')
 
     return k
