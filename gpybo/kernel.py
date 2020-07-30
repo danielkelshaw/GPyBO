@@ -101,6 +101,15 @@ class Kernel(nn.Module):
 
 class SquaredExponentialKernel(Kernel):
 
+    """
+    Improved in:
+
+        .new_kernel.kernels.SquaredExponentialKernel()
+
+    The new implementation utilises `torch.cdist` as opposed to
+    using the custom `pw_dist`.
+    """
+
     def __init__(self,
                  l: Union[int, float] = 1.0,
                  sigma: Union[int, float] = 1.0) -> None:
@@ -143,6 +152,15 @@ class SquaredExponentialKernel(Kernel):
 
 class OneKernel(Kernel):
 
+    """
+    Fixed in:
+
+        .new_kernel.kernels.OneKernel()
+
+    New implementation uses the shape of the `x` and `xp` tensors to
+    create the kernel which also works for higher dimension inputs.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -152,6 +170,14 @@ class OneKernel(Kernel):
 
 class ZeroKernel(Kernel):
 
+    """
+    Fixed in:
+
+        .new_kernel.kernels.ZeroKernel()
+
+    The implementation seen below doesn't actually work at all...
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -160,6 +186,15 @@ class ZeroKernel(Kernel):
 
 
 class SincKernel(Kernel):
+
+    """
+    Improved in:
+
+        .new_kernel.kernels.SincKernel()
+
+    The new implementation utilises `torch.cdist` as opposed to
+    using the custom `pw_dist`.
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -171,6 +206,15 @@ class SincKernel(Kernel):
 
 class Matern32Kernel(Kernel):
 
+    """
+    Improved in:
+
+        .new_kernel.kernels.Matern32Kernel()
+
+    The new implementation utilises `torch.cdist` as opposed to
+    using the custom `pw_dist`.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -180,6 +224,15 @@ class Matern32Kernel(Kernel):
 
 
 class Matern52Kernel(Kernel):
+
+    """
+    Improved in:
+
+        .new_kernel.kernels.Matern52Kernel()
+
+    The new implementation utilises `torch.cdist` as opposed to
+    using the custom `pw_dist`.
+    """
 
     def __init__(self) -> None:
         super().__init__()
