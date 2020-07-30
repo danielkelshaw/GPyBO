@@ -11,9 +11,6 @@ from ..acquisition import BaseAcquisitionFunction
 def scipy_acqopt(x0: Tensor, lb: Tensor, ub: Tensor,
                  acq: BaseAcquisitionFunction) -> Tuple[Tensor, Tensor]:
 
-    if not (x0.shape == lb.shape == ub.shape):
-        raise AssertionError('Shapes of x0, lb, and ub must match.')
-
     _x, _lb, _ub = (convert_array(x) for x in [x0, lb, ub])
     bounds = Bounds(_lb, _ub)
 

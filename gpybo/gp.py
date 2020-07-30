@@ -206,6 +206,14 @@ class GP(nn.Module):
             self.x = torch.cat([self.x, x], dim=0)
             self.y = torch.cat([self.y, y], dim=0)
 
+    def prior(self) -> MultivariateNormal:
+
+        k_xx = self.kernel.calculate(self.x, self.x)
+        mu = self.mean.calculate(self.x).flatten()
+        k_xx = pd_jitter(k_xx)
+
+        return MultivariateNormal(mu, k_xx)
+
     @to_tensor
     @uprank_two
     def posterior(self, xp: Any) -> MultivariateNormal:
@@ -222,8 +230,6 @@ class GP(nn.Module):
         Normal
             Normal distribution with calculated mu and covariance.
         """
-
-        # with torch.no_grad():
 
         k_xx = self.kernel.calculate(self.x, self.x)
         k_xxp = self.kernel.calculate(self.x, xp)

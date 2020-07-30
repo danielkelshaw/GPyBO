@@ -58,9 +58,19 @@ class BO:
 
         acquisition = self.acquisition(self.model)
 
-        # instead of starting with one random position, pick n
-        _x = draw_sobol(torch.stack((self.lb, self.ub), -1), n_samples)
-        xopt = _x[acquisition(_x).argmax()]
+        xcandidates = draw_sobol(torch.stack((self.lb, self.ub), -1), n_samples)
+        acqcandidates = []
+
+        for x in xcandidates:
+            try:
+                acq = acquisition(x.unsqueeze(0))
+                acqcandidates.append(acq)
+            except ValueError:
+                acqcandidates.append(0.0)
+
+        acqcandidates = torch.tensor(acqcandidates)
+        xopt = xcandidates[acqcandidates.argmax()].unsqueeze(0)
+
         xopt, loss = scipy_acqopt(xopt, self.lb, self.ub, acquisition)
 
         return xopt, loss
