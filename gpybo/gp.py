@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from typing import Any, Tuple
 
@@ -10,28 +12,8 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 from .kernel.base_kernel import BaseKernel
 from .mean.base_mean import BaseMean
 from .mean.means import ZeroMean
-
 from .utils.lab import pd_jitter
 from .utils.shaping import uprank_two, to_tensor
-
-"""
-At the moment the implementation of `GP` is rather messy and the inputs
-are not consistent - this is leading to troubles with implementation of
-Bayesian Optimisation.
-
-This stage of work aims to focus on improving the quality of the GP
-code such that it is not a blocker for the BO project.
-
-
-// Stage One:
-- [x] Get everything working with 'hardcoded' shapes.
-- [x] Implement additional tests to make sure these work as intended.
-
-// Stage Two:
-- [x] Add decorators to allow less constrained input (for users).
-- [x] Implement tests for decorators to ensure they work as intended.
-- [x] Add user-friendly interfaces such as __call__ and __repr__.
-"""
 
 
 class GP(nn.Module):
@@ -40,6 +22,18 @@ class GP(nn.Module):
                  kernel: BaseKernel,
                  mean: BaseMean = ZeroMean(),
                  noise: bool = False) -> None:
+
+        """Gaussian Process.
+
+        Parameters
+        ----------
+        kernel : BaseMean
+            Positive Definite kernel for calculations.
+        mean : BaseMean
+            Mean function for calculations.
+        noise : bool
+            True if noise present, False otherwise.
+        """
 
         super().__init__()
 
@@ -58,7 +52,7 @@ class GP(nn.Module):
     def __repr__(self) -> str:
         return f'GP({str(self.mean)}, {str(self.kernel)})'
 
-    def __or__(self, other: Tuple[Tensor, Tensor]) -> 'GP':
+    def __or__(self, other: Tuple[Any, Any]) -> GP:
 
         if not len(other) == 2:
             raise ValueError('Must provide (x, y)')
@@ -72,6 +66,19 @@ class GP(nn.Module):
     @staticmethod
     def _set_noise(noise: bool) -> Tensor:
 
+        """Responsible for setting noise as a parameter / not.
+
+        Parameters
+        ----------
+        noise : bool
+            Set noise as a parameter if True.
+
+        Returns
+        -------
+        Tensor
+            Value of the noise.
+        """
+
         if noise:
             return nn.Parameter(torch.tensor(1.0, dtype=torch.float32))
         else:
@@ -81,8 +88,16 @@ class GP(nn.Module):
     @uprank_two
     def observe(self, x: Any, y: Any) -> None:
 
-        if not len(x.shape) == len(y.shape) == 2:
-            raise ValueError('Must provide 2D inputs.')
+        """Add observations to the GP model.
+
+        Parameters
+        ----------
+        x : Tensor
+            x-inputs to the model.
+        y : Tensor
+            y-inputs to the model.
+        """
+
         if not x.shape[0] == y.shape[0]:
             raise ValueError('Must provide same number of samples for x and y.')
 
@@ -96,6 +111,19 @@ class GP(nn.Module):
     @to_tensor
     @uprank_two
     def posterior(self, xp: Any) -> MultivariateNormal:
+
+        """Calculate the posterior distribution at a point, xp.
+
+        Parameters
+        ----------
+        xp : Tensor
+            Point at which to calculate the posterior distribution.
+
+        Returns
+        -------
+        MultivariateNormal
+            Posterior distribution.
+        """
 
         if not xp.shape[1] == self.x.shape[1]:
             raise ValueError('xp shape does not match observed sample shapes.')
@@ -117,6 +145,19 @@ class GP(nn.Module):
 
     def optimise(self, n_iterations: int = 1000) -> Tensor:
 
+        """Optimises the GP Hyperparameters to improve model fit.
+
+        Parameters
+        ----------
+        n_iterations : int
+            Number of iterations to optimise for.
+
+        Returns
+        -------
+        loss : Tensor
+            Optimised loss.
+        """
+
         loss = None
         optimiser = self.optimiser(self.parameters())
 
@@ -124,7 +165,7 @@ class GP(nn.Module):
 
             optimiser.zero_grad()
 
-            loss = -self.log_likelihood(grad=True).sum()
+            loss = -self.log_likelihood(grad=True)
 
             loss.backward()
             optimiser.step()
@@ -132,6 +173,21 @@ class GP(nn.Module):
         return loss
 
     def optimise_restarts(self, n_restarts: int = 10, n_iterations: int = 1000) -> Tensor:
+
+        """Optimise the GP Hyperparameters with restarts.
+
+        Parameters
+        ----------
+        n_restarts : int
+            Number of restarts to use in training.
+        n_iterations : int
+            Number of iterations to optimise for on each restart.
+
+        Returns
+        -------
+        Tensor
+            Optimised loss.
+        """
 
         losses = []
         params = []
@@ -156,6 +212,19 @@ class GP(nn.Module):
 
     def log_likelihood(self, grad: bool = False) -> Tensor:
 
+        """Log likelihood of the observations.
+
+        Parameters
+        ----------
+        grad : bool
+            If true uses matmul approach, if False uses lstsq.
+
+        Returns
+        -------
+        ll : Tensor
+            Log likelihood.
+        """
+
         k_xx = self.kernel.calculate(self.x, self.x)
         k_xx = k_xx + self.noise * torch.eye(k_xx.shape[0])
         k_xx = pd_jitter(k_xx)
@@ -166,7 +235,6 @@ class GP(nn.Module):
             const_term = 0.5 * len(self.x) * np.log(2 * np.pi)
 
             ll = -y_term - log_term - const_term
-
         else:
             L = torch.cholesky(k_xx)
             a0, _ = torch.lstsq(self.y, L)
@@ -178,4 +246,4 @@ class GP(nn.Module):
 
             ll = y_alpha - trace_log - const
 
-        return ll
+        return ll.sum()
