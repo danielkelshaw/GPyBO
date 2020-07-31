@@ -1,5 +1,5 @@
 from scipy.optimize import Bounds, minimize
-from .shaping import to_array, convert_array, convert_tensor
+from .shaping import convert_array, convert_tensor
 
 import numpy as np
 import torch

@@ -1,12 +1,83 @@
+from __future__ import annotations
+
 import re
+from typing import Any
 from typing import NoReturn, Union
 
 import torch
+import torch.nn as nn
 from torch import Tensor
 
-from .base_kernel import BaseKernel
-from .kernel import OneKernel
 from ..utils.shaping import convert_tensor
+
+
+class BaseKernel(nn.Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __repr__(self) -> str:
+        msg_list = [f'{k}={v:.3f}' for k, v in self.named_parameters()]
+        msg = super().__repr__().replace('()', '(' + ', '.join(msg_list) + ')')
+        return msg
+
+    def __add__(self, other: Any) -> SumKernel:
+        return SumKernel(self, other)
+
+    def __radd__(self, other: Any) -> SumKernel:
+        return SumKernel(other, self)
+
+    def __sub__(self, other: Any) -> SumKernel:
+        return SumKernel(self, -other)
+
+    def __rsub__(self, other: Any) -> SumKernel:
+        return SumKernel(other, -self)
+
+    def __neg__(self) -> ProductKernel:
+        return ProductKernel(-1, self)
+
+    def __mul__(self, other: Any) -> ProductKernel:
+        return ProductKernel(self, other)
+
+    def __rmul__(self, other: Any) -> ProductKernel:
+        return ProductKernel(other, self)
+
+    def __len__(self) -> int:
+        return 1
+
+    def __call__(self, x: Tensor, xp: Tensor) -> Tensor:
+        return self.calculate(x, xp)
+
+    def calculate(self, x: Tensor, xp: Tensor) -> NoReturn:
+
+        """Produces the Kernel given two sets of random variables.
+
+        The calculation of the kernel depends on the kernel method being
+        used - this is defined within the defined super class.
+
+        Parameters
+        ----------
+        x : Tensor
+            First set of random variables.
+        xp : Tensor
+            Second set of random variables.
+
+        Returns
+        -------
+        Tensor
+            Calculated kernel.
+        """
+
+        raise NotImplementedError('BaseKernel::calculate()')
+
+
+class OneKernel(BaseKernel):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+        return torch.ones(x.shape[0], xp.shape[0], dtype=torch.float32)
 
 
 class CombinationKernel(BaseKernel):
@@ -17,7 +88,7 @@ class CombinationKernel(BaseKernel):
     def add(self, *args: BaseKernel) -> NoReturn:
         raise NotImplementedError('CombinationKernel::add()')
 
-    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
+    def calculate(self, x: Tensor, xp: Tensor) -> NoReturn:
         raise NotImplementedError('CombinationKernel::calculate()')
 
 
@@ -40,7 +111,7 @@ class SumKernel(CombinationKernel):
 
         self.add(*args)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         msg = ' + '.join([str(k) for k in self.kernels])
         msg = re.sub(r'\+ -(\d*\.\d*)', r'- \1', msg)
         msg = re.sub(r'[^=]1\.0', ' ', msg)
@@ -115,7 +186,7 @@ class ProductKernel(CombinationKernel):
 
         self.add(*args)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
 
         consts = [1.0]
         msg_list = []

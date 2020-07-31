@@ -35,6 +35,6 @@ class MOMean(BaseMean):
             xp_start = idx * xp.numel()
             xp_end = xp_start + xp.numel()
 
-            output_mean[xp_start : xp_end] = mean.calculate(xp)
+            output_mean[xp_start: xp_end] = mean.calculate(xp)
 
         return output_mean

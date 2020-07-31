@@ -26,10 +26,6 @@ class MOKernel(BaseKernel):
     def __len__(self) -> int:
         return len(self.kernels)
 
-    @property
-    def n_kernels(self) -> int:
-        return len(self.kernels)
-
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
 
         x_numel = self.n_kernels * x.numel()

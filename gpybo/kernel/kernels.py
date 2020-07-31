@@ -7,15 +7,6 @@ from torch import Tensor
 from .base_kernel import BaseKernel
 
 
-class OneKernel(BaseKernel):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
-        return torch.ones(x.shape[0], xp.shape[0], dtype=torch.float32)
-
-
 class ZeroKernel(BaseKernel):
 
     def __init__(self) -> None:
