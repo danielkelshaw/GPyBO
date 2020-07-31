@@ -247,6 +247,14 @@ class Matern52Kernel(Kernel):
 
 class CombinationKernel(Kernel):
 
+    """
+    Moved to:
+
+        .new_kernel.combination.CombinationKernel()
+
+    No real changes.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 

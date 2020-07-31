@@ -67,5 +67,5 @@ def convert_array(x: Any) -> Any:
         return x
 
 
-def unwrap(x: Tensor):
+def unwrap(x: Tensor) -> Tensor:
     return torch.stack(x.unbind(1)).view(-1, 1)

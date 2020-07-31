@@ -43,6 +43,9 @@ class NewGP(nn.Module):
 
         super().__init__()
 
+        if not len(mean) == len(kernel):
+            raise ValueError('len(mean) must equal len(kernel).')
+
         self.mean = mean
         self.kernel = kernel
 
@@ -63,8 +66,6 @@ class NewGP(nn.Module):
         self.observe(*other)
         return self
 
-    @to_tensor
-    @uprank_two
     def __call__(self, xp: Any) -> MultivariateNormal:
         return self.posterior(xp)
 
