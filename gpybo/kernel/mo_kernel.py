@@ -10,6 +10,14 @@ class MOKernel(BaseKernel):
 
     def __init__(self, kernels: List[BaseKernel]) -> None:
 
+        """MultiOutput Kernel.
+
+        Parameters
+        ----------
+        kernels : List[BaseKernel]
+            List of kernels for multiple outputs.
+        """
+
         super().__init__()
 
         for k in kernels:
@@ -28,8 +36,23 @@ class MOKernel(BaseKernel):
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
 
-        x_numel = self.n_kernels * x.numel()
-        xp_numel = self.n_kernels * xp.numel()
+        """Calculate multi-output kernel.
+
+        Parameters
+        ----------
+        x : Tensor
+            First set of random variables.
+        xp : Tensor
+            Second set of random variables.
+
+        Returns
+        -------
+        output_kernel : Tensor
+            Calculated multi-output kernel.
+        """
+
+        x_numel = len(self) * x.numel()
+        xp_numel = len(self) * xp.numel()
         output_kernel = torch.zeros((x_numel, xp_numel), dtype=torch.float32)
 
         for idx, kernel in enumerate(self.kernels):

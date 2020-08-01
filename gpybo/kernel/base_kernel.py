@@ -52,9 +52,6 @@ class BaseKernel(nn.Module):
 
         """Produces the Kernel given two sets of random variables.
 
-        The calculation of the kernel depends on the kernel method being
-        used - this is defined within the defined super class.
-
         Parameters
         ----------
         x : Tensor

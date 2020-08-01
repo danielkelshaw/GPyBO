@@ -10,6 +10,9 @@ from .base_kernel import BaseKernel
 class ZeroKernel(BaseKernel):
 
     def __init__(self) -> None:
+
+        """Zero Kernel."""
+
         super().__init__()
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
@@ -19,6 +22,17 @@ class ZeroKernel(BaseKernel):
 class SquaredExponentialKernel(BaseKernel):
 
     def __init__(self, l: Any = 1.0, sigma: Any = 1.0) -> None:
+
+        """Squared Exponential Kernel.
+
+        Parameters
+        ----------
+        l : Any
+            Lengthscale for the kernel.
+        sigma : Any
+            Sigma / variance for the kernel.
+        """
+
         super().__init__()
 
         self.l = nn.Parameter(torch.tensor(l, dtype=torch.float32))
@@ -32,7 +46,10 @@ class SquaredExponentialKernel(BaseKernel):
 class SincKernel(BaseKernel):
 
     def __init__(self) -> None:
-        super.__init__()
+
+        """Sinc Kernel."""
+
+        super().__init__()
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
         dst = torch.cdist(x, xp, p=2)
@@ -42,6 +59,9 @@ class SincKernel(BaseKernel):
 class Matern32Kernel(BaseKernel):
 
     def __init__(self) -> None:
+
+        """Matern32 Kernel."""
+
         super().__init__()
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
@@ -52,6 +72,9 @@ class Matern32Kernel(BaseKernel):
 class Matern52Kernel(BaseKernel):
 
     def __init__(self) -> None:
+
+        """Matern52 Kernel."""
+
         super().__init__()
 
     def calculate(self, x: Tensor, xp: Tensor) -> Tensor:
