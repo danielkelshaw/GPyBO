@@ -7,6 +7,9 @@ from .base_mean import BaseMean
 class ZeroMean(BaseMean):
 
     def __init__(self) -> None:
+
+        """Zero Mean."""
+
         super().__init__()
 
     def calculate(self, xp: Tensor) -> Tensor:

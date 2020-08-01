@@ -1,5 +1,7 @@
-from torch import Tensor
+from typing import NoReturn
+
 import torch.nn as nn
+from torch import Tensor
 
 
 class BaseMean(nn.Module):
@@ -18,5 +20,19 @@ class BaseMean(nn.Module):
     def __len__(self) -> int:
         return 1
 
-    def calculate(self, xp: Tensor) -> Tensor:
+    def calculate(self, xp: Tensor) -> NoReturn:
+
+        """Produces the mean given a set of random variables.
+
+        Parameters
+        ----------
+        xp : Tensor
+            Set of random variables.
+
+        Returns
+        -------
+        Tensor
+            Calculated Mean.
+        """
+
         raise NotImplementedError('BaseMean::calculate()')

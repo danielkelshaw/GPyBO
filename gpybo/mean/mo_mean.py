@@ -10,6 +10,14 @@ class MOMean(BaseMean):
 
     def __init__(self, means: List[BaseMean]) -> None:
 
+        """Multi-output Mean.
+
+        Parameters
+        ----------
+        means : List[BaseMean]
+            List of means to use for multiple outputs.
+        """
+
         super().__init__()
 
         for m in means:
@@ -28,7 +36,20 @@ class MOMean(BaseMean):
 
     def calculate(self, xp: Tensor) -> Tensor:
 
-        output_mean = torch.zeros((self.n_means * xp.numel(), 1), dtype=torch.float32)
+        """Calculate the multi-output mean.
+
+        Parameters
+        ----------
+        xp : Tensor
+            Set of random variables.
+
+        Returns
+        -------
+        output_mean : Tensor
+            Calculated multi-output mean.
+        """
+
+        output_mean = torch.zeros((len(self) * xp.numel(), 1), dtype=torch.float32)
 
         for idx, mean in enumerate(self.means):
 
