@@ -1,26 +1,91 @@
-import torch
-from torch import Tensor
-from gpybo.utils.shaping import to_tensor, uprank_two
+import pytest
+
+from gpybo.utils.shaping import *
 
 
-class TestShaping:
+@pytest.mark.parametrize('x', [torch.tensor(0.0), torch.tensor([0.0]), torch.tensor([[0.0]])])
+def test_uprank_two(x: Tensor) -> None:
 
-    def test_to_tensor(self):
+    @uprank_two
+    def retval(x_in: Tensor) -> Tensor:
+        return x_in
 
-        x = [0, 1, 2]
+    ret = retval(x)
 
-        @to_tensor
-        def ret_val(val):
-            return val
+    assert len(ret.shape) == 2
+    assert isinstance(ret, Tensor)
 
-        assert isinstance(ret_val(x), Tensor)
 
-    def test_uprank_two(self):
+@pytest.mark.parametrize('n', [3, 5, 10])
+def test_uprank(n: int):
 
-        x = torch.tensor(3.0, dtype=torch.float32)
+    x = torch.tensor(0.0)
+    ret = uprank(x, n)
 
-        @uprank_two
-        def ret_val(val):
-            return val
+    assert len(ret.shape) == n
 
-        assert ret_val(x).shape == (1, 1)
+
+@pytest.mark.parametrize('x', [torch.rand(1, 1, 1), torch.rand(1, 1, 1, 1)])
+def test_uprank_ve(x: Tensor) -> None:
+
+    with pytest.raises(ValueError):
+        ret = uprank(x, 2)
+
+
+@pytest.mark.parametrize('x', [0, 0.0, [0.0, 0.0], np.array([0.0, 0.0])])
+def test_to_tensor(x: Any) -> None:
+
+    @to_tensor
+    def retval(x_in: Any) -> Tensor:
+        return x_in
+
+    ret = retval(x)
+
+    assert isinstance(ret, Tensor)
+
+
+@pytest.mark.parametrize('x', [0, 0.0, [0.0, 0.0], np.array([0.0, 0.0])])
+def test_convert_tensor(x: Any) -> None:
+
+    ret = convert_tensor(x)
+
+    assert isinstance(ret, Tensor)
+
+
+@pytest.mark.parametrize('x', [0, 0.0, [0.0, 0.0], torch.tensor([0.0, 0.0])])
+def test_to_array(x: Any) -> None:
+
+    @to_array
+    def retval(x_in: Any) -> Tensor:
+        return x_in
+
+    ret = retval(x)
+
+    assert isinstance(ret, np.ndarray)
+
+
+@pytest.mark.parametrize('x', [0, 0.0, [0.0, 0.0], torch.tensor([0.0, 0.0])])
+def test_convert_array(x: Any) -> None:
+
+    ret = convert_array(x)
+
+    assert isinstance(ret, np.ndarray)
+
+
+def test_unwrap() -> None:
+
+    x1 = torch.ones(5, 3)
+    x2 = torch.tensor([
+        [1, 4, 7],
+        [2, 5, 8],
+        [3, 6, 9]
+    ])
+
+    expected1 = torch.ones(15, 1)
+    expected2 = torch.arange(1, 10).view(-1, 1)
+
+    ret1 = unwrap(x1)
+    ret2 = unwrap(x2)
+
+    assert torch.all(torch.eq(ret1, expected1))
+    assert torch.all(torch.eq(ret2, expected2))

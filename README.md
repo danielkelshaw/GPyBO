@@ -5,7 +5,7 @@
 Gaussian Processes | Bayesian Optimisation
 
 - [x] MIT License
-- [x] Python 3.6+
+- [x] Python 3.7+
 
 ### **Gaussian Process Regression in 7 Lines:**
 

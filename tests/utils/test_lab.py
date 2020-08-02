@@ -1,17 +1,31 @@
-import torch
-from gpybo.utils.lab import pw_dist2
+import pytest
+
+from gpybo.kernel.kernels import SquaredExponentialKernel
+from gpybo.utils.lab import *
 
 
-class TestLab:
+def test_pd_jitter_ve_sm() -> None:
 
-    def test_pw_dist2(self):
+    k = torch.ones(5, 3)
 
-        x = torch.tensor([0, 1, 2], dtype=torch.float32)
-        dst = pw_dist2(x, x)
-        target = torch.tensor([
-            [0, 1, 4],
-            [1, 0, 1],
-            [4, 1, 0]
-        ], dtype=torch.float32)
+    with pytest.raises(ValueError):
+        ret = pd_jitter(k)
 
-        assert torch.allclose(dst, target, atol=1e-5)
+
+def test_pd_jitter_ve_pd() -> None:
+
+    k = torch.zeros(10, 10)
+
+    with pytest.raises(ValueError):
+        ret = pd_jitter(k)
+
+
+def test_pd_jitter() -> None:
+
+    x = torch.rand(5, 1)
+    k = SquaredExponentialKernel()(x, x)
+
+    k_jit = pd_jitter(k)
+
+    assert isinstance(k_jit, Tensor)
+    assert k.shape == k_jit.shape
