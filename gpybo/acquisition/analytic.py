@@ -6,6 +6,9 @@ from .base_acquisition import BaseAcquisition
 from ..gp import GP
 
 
+# TODO :: Consider output shapes for acquisition functions.
+
+
 class ExpectedImprovement(BaseAcquisition):
 
     def __init__(self, model: GP, alpha: float = 0.01) -> None:
@@ -41,9 +44,13 @@ class ProbabilityOfImprovement(BaseAcquisition):
 
     def forward(self, x: Tensor) -> Tensor:
 
-        mu = self.model.mean(x)
-        cov = self.model.kernel(x, x)
+        best_f = torch.max(self.model.y).to(x)
+        posterior = self.model.posterior(x)
 
-        norm = Normal(mu, cov)
+        mean = posterior.mean
+        sigma = posterior.variance.sqrt()
 
-        return norm.cdf(x)
+        u = (mean - best_f.expand_as(mean)) / sigma
+        norm = Normal(torch.zeros_like(u), torch.ones_like(u))
+
+        return norm.cdf(u)
