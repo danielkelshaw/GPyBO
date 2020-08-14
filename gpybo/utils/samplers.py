@@ -4,14 +4,16 @@ from torch import Tensor
 from torch.quasirandom import SobolEngine
 
 
-def draw_sobol(bounds: Tensor, n: int, seed: Optional[int] = None) -> Tensor:
+def draw_sobol(lb: Tensor, ub: Tensor, n: int, seed: Optional[int] = None) -> Tensor:
 
     """Draws samples from Sobol Sequence.
 
     Parameters
     ----------
-    bounds : Tensor
-        Bounds between which to draw samples.
+    lb : Tensor
+        Lower bound.
+    ub : Tensor
+        Upper bound.
     n : int
         Number of samples to draw.
     seed : int
@@ -23,13 +25,9 @@ def draw_sobol(bounds: Tensor, n: int, seed: Optional[int] = None) -> Tensor:
         Samples drawn from Sobol sequence.
     """
 
-    dim = bounds.shape[0]
-
-    lb = bounds[:, 0]
-    ub = bounds[:, 1]
-    rng = ub - lb
+    dim = lb.shape[0]
 
     engine = SobolEngine(dim, scramble=True, seed=seed)
     samples = engine.draw(n, dtype=lb.dtype).view(n, dim)
 
-    return lb + rng * samples
+    return lb + (ub - lb) * samples

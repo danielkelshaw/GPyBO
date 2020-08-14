@@ -5,11 +5,10 @@ import numpy as np
 import torch
 from torch import Tensor
 from typing import Tuple
-from ..acquisition import BaseAcquisitionFunction
+from ..acquisition.base_acquisition import BaseAcquisition
 
 
-def scipy_acqopt(x0: Tensor, lb: Tensor, ub: Tensor,
-                 acq: BaseAcquisitionFunction) -> Tuple[Tensor, Tensor]:
+def scipy_acqopt(x0: Tensor, lb: Tensor, ub: Tensor, acq: BaseAcquisition) -> Tuple[Tensor, Tensor]:
 
     _x, _lb, _ub = (convert_array(x) for x in [x0, lb, ub])
     bounds = Bounds(_lb, _ub)
