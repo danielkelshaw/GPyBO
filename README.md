@@ -39,8 +39,8 @@ import torch
 def opt_apply_fn(x):
     return -torch.pow(6 * x - 2, 2) * torch.sin(12 * x - 4)
 
-bo = BO(model=gp, bounds=torch.tensor([[0.0, 1.0]], dtype=torch.float32), fn=opt_apply_fn)
-bo.fn_optimise(observation_budget=10)
+bo = BO(model=gp, bounds=torch.tensor([[0.0, 1.0]], dtype=torch.float32))
+bo.optimise_fn(fn=opt_apply_fn, n_iterations=10)
 ```
 
 ### **Kernel Composition:**
